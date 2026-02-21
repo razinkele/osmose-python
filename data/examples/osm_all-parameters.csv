@@ -1,0 +1,26 @@
+# OSMOSE example configuration - Bay of Biscay
+# Master parameter file with references to sub-configs
+simulation.time.ndtperyear ; 24
+simulation.time.nyear ; 50
+simulation.nspecies ; 3
+simulation.nresource ; 2
+simulation.ncpu ; 4
+simulation.nsimulation ; 1
+simulation.nschool ; 20
+simulation.fishing.mortality.enabled ; true
+simulation.nfisheries ; 1
+mortality.subdt ; 10
+mortality.natural.rate.sp0 ; 0.2
+mortality.natural.rate.sp1 ; 0.18
+mortality.natural.rate.sp2 ; 0.15
+mortality.starvation.rate.max.sp0 ; 0.5
+mortality.starvation.rate.max.sp1 ; 0.4
+mortality.starvation.rate.max.sp2 ; 0.3
+stochastic.mortality.randomseed.fixed ; false
+osmose.configuration.species ; osm_param-species.csv
+osmose.configuration.grid ; osm_param-grid.csv
+osmose.configuration.output ; osm_param-output.csv
+osmose.configuration.predation ; osm_param-predation.csv
+osmose.configuration.fishing ; osm_param-fishing.csv
+osmose.configuration.ltl ; osm_param-ltl.csv
+osmose.configuration.movement ; osm_param-movement.csv

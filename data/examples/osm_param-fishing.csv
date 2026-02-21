@@ -1,0 +1,8 @@
+# Fishing parameters
+fisheries.enabled ; true
+fisheries.name.fsh0 ; Trawl
+mortality.fishing.rate.sp0 ; 0.3
+mortality.fishing.rate.sp1 ; 0.25
+mortality.fishing.rate.sp2 ; 0.4
+mortality.fishing.season.start.fsh0 ; 0
+mortality.fishing.season.end.fsh0 ; 23

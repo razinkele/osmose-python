@@ -1,0 +1,43 @@
+# Species parameters - Bay of Biscay example
+# Species 0: European Anchovy (Engraulis encrasicolus)
+species.name.sp0 ; Anchovy
+species.linf.sp0 ; 19.5
+species.k.sp0 ; 0.364
+species.t0.sp0 ; -0.7
+species.maturity.size.sp0 ; 12.0
+species.sexratio.sp0 ; 0.5
+species.lifespan.sp0 ; 4
+species.lw.condition.factor.sp0 ; 0.006
+species.lw.allpower.sp0 ; 3.06
+species.vonbertalanffy.threshold.age.sp0 ; 0
+population.seeding.biomass.sp0 ; 10000
+population.initialization.method.sp0 ; biomass
+reproduction.season.file.sp0 ; reproduction/reprod_anchovy.csv
+# Species 1: European Sardine (Sardina pilchardus)
+species.name.sp1 ; Sardine
+species.linf.sp1 ; 23.0
+species.k.sp1 ; 0.28
+species.t0.sp1 ; -0.9
+species.maturity.size.sp1 ; 15.0
+species.sexratio.sp1 ; 0.5
+species.lifespan.sp1 ; 5
+species.lw.condition.factor.sp1 ; 0.007
+species.lw.allpower.sp1 ; 3.10
+species.vonbertalanffy.threshold.age.sp1 ; 0
+population.seeding.biomass.sp1 ; 15000
+population.initialization.method.sp1 ; biomass
+reproduction.season.file.sp1 ; reproduction/reprod_sardine.csv
+# Species 2: European Hake (Merluccius merluccius)
+species.name.sp2 ; Hake
+species.linf.sp2 ; 110.0
+species.k.sp2 ; 0.106
+species.t0.sp2 ; -0.17
+species.maturity.size.sp2 ; 40.0
+species.sexratio.sp2 ; 0.5
+species.lifespan.sp2 ; 12
+species.lw.condition.factor.sp2 ; 0.005
+species.lw.allpower.sp2 ; 3.14
+species.vonbertalanffy.threshold.age.sp2 ; 0
+population.seeding.biomass.sp2 ; 25000
+population.initialization.method.sp2 ; biomass
+reproduction.season.file.sp2 ; reproduction/reprod_hake.csv

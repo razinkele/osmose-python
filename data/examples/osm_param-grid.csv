@@ -1,0 +1,9 @@
+# Grid parameters - Bay of Biscay
+grid.ncolumn ; 30
+grid.nline ; 20
+grid.upleft.lat ; 48.0
+grid.upleft.lon ; -6.0
+grid.lowright.lat ; 43.0
+grid.lowright.lon ; -1.0
+grid.java.classname ; fr.ird.osmose.grid.OriginalGrid
+grid.mask.file ; grid/bay_of_biscay_mask.csv

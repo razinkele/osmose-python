@@ -1,0 +1,15 @@
+# Predation parameters
+predation.accessibility.file ; predation/accessibility_matrix.csv
+predation.accessibility.stage.structure ; age
+predation.ingestion.rate.max.sp0 ; 3.5
+predation.ingestion.rate.max.sp1 ; 3.2
+predation.ingestion.rate.max.sp2 ; 6.0
+predation.efficiency.critical.sp0 ; 0.57
+predation.efficiency.critical.sp1 ; 0.57
+predation.efficiency.critical.sp2 ; 0.57
+predation.predprey.sizeratio.max.sp0 ; 3.0
+predation.predprey.sizeratio.max.sp1 ; 3.0
+predation.predprey.sizeratio.max.sp2 ; 5.0
+predation.predprey.sizeratio.min.sp0 ; 1.0
+predation.predprey.sizeratio.min.sp1 ; 1.0
+predation.predprey.sizeratio.min.sp2 ; 1.5

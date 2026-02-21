@@ -1,0 +1,14 @@
+# Lower Trophic Level (plankton) parameters
+ltl.java.classname ; fr.ird.osmose.ltl.LTLFastForcing
+ltl.netcdf.file ; ltl/plankton_biscay.nc
+ltl.nstep ; 365
+ltl.name.rsc0 ; SmallPhytoplankton
+ltl.name.rsc1 ; LargeZooplankton
+ltl.tl.rsc0 ; 1.0
+ltl.tl.rsc1 ; 2.0
+ltl.size.min.rsc0 ; 0.0002
+ltl.size.min.rsc1 ; 0.02
+ltl.size.max.rsc0 ; 0.002
+ltl.size.max.rsc1 ; 0.2
+ltl.accessibility2fish.rsc0 ; 0.01
+ltl.accessibility2fish.rsc1 ; 0.05

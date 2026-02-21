@@ -3,59 +3,44 @@
 from shiny import App, ui, reactive
 from ui.theme import THEME
 
+from ui.pages.setup import setup_ui, setup_server
+from ui.pages.grid import grid_ui, grid_server
+from ui.pages.forcing import forcing_ui, forcing_server
+from ui.pages.fishing import fishing_ui, fishing_server
+from ui.pages.movement import movement_ui, movement_server
+from ui.pages.run import run_ui, run_server
+from ui.pages.results import results_ui, results_server
+from ui.pages.calibration import calibration_ui, calibration_server
+from ui.pages.scenarios import scenarios_ui, scenarios_server
+from ui.pages.advanced import advanced_ui, advanced_server
+
 app_ui = ui.page_navbar(
-    ui.nav_panel("Setup", ui.div(
-        ui.h3("Species & Simulation Setup"),
-        ui.p("Configure species parameters, simulation settings, and initial conditions."),
-        ui.output_ui("setup_content"),
-    )),
-    ui.nav_panel("Grid & Maps", ui.div(
-        ui.h3("Grid Configuration"),
-        ui.p("Define the spatial domain, grid dimensions, and land/sea mask."),
-        ui.output_ui("grid_content"),
-    )),
-    ui.nav_panel("Forcing", ui.div(
-        ui.h3("Environmental Forcing"),
-        ui.p("Configure plankton/LTL groups and environmental forcing data."),
-        ui.output_ui("forcing_content"),
-    )),
-    ui.nav_panel("Fishing", ui.div(
-        ui.h3("Fishing Configuration"),
-        ui.p("Set up fishing mortality, fisheries, selectivity, and MPAs."),
-        ui.output_ui("fishing_content"),
-    )),
-    ui.nav_panel("Run", ui.div(
-        ui.h3("Run Control"),
-        ui.p("Execute OSMOSE simulations and monitor progress."),
-        ui.output_ui("run_content"),
-    )),
-    ui.nav_panel("Results", ui.div(
-        ui.h3("Results Visualization"),
-        ui.p("Explore simulation outputs: biomass, diet, spatial maps, mortality."),
-        ui.output_ui("results_content"),
-    )),
-    ui.nav_panel("Calibration", ui.div(
-        ui.h3("Model Calibration"),
-        ui.p("Multi-objective optimization and sensitivity analysis."),
-        ui.output_ui("calibration_content"),
-    )),
-    ui.nav_panel("Scenarios", ui.div(
-        ui.h3("Scenario Management"),
-        ui.p("Save, load, compare, and fork named configurations."),
-        ui.output_ui("scenarios_content"),
-    )),
-    ui.nav_panel("Advanced", ui.div(
-        ui.h3("Advanced Configuration"),
-        ui.p("Raw parameter editor for all 200+ OSMOSE parameters."),
-        ui.output_ui("advanced_content"),
-    )),
+    ui.nav_panel("Setup", setup_ui()),
+    ui.nav_panel("Grid & Maps", grid_ui()),
+    ui.nav_panel("Forcing", forcing_ui()),
+    ui.nav_panel("Fishing", fishing_ui()),
+    ui.nav_panel("Movement", movement_ui()),
+    ui.nav_panel("Run", run_ui()),
+    ui.nav_panel("Results", results_ui()),
+    ui.nav_panel("Calibration", calibration_ui()),
+    ui.nav_panel("Scenarios", scenarios_ui()),
+    ui.nav_panel("Advanced", advanced_ui()),
     title="OSMOSE | Python Interface",
     theme=THEME,
 )
 
 
 def server(input, output, session):
-    pass  # Server logic will be added as pages are implemented
+    setup_server(input, output, session)
+    grid_server(input, output, session)
+    forcing_server(input, output, session)
+    fishing_server(input, output, session)
+    movement_server(input, output, session)
+    run_server(input, output, session)
+    results_server(input, output, session)
+    calibration_server(input, output, session)
+    scenarios_server(input, output, session)
+    advanced_server(input, output, session)
 
 
 app = App(app_ui, server)

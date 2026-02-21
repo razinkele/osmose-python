@@ -9,7 +9,7 @@ from ui.components.param_form import render_field
 def grid_ui():
     # Separate grid type selector from other fields
     grid_type_field = next((f for f in GRID_FIELDS if "classname" in f.key_pattern), None)
-    regular_fields = [f for f in GRID_FIELDS if f.key_pattern.startswith("grid.n") or f.key_pattern.startswith("grid.up") or f.key_pattern.startswith("grid.low")]
+    regular_fields = [f for f in GRID_FIELDS if (f.key_pattern.startswith("grid.n") or f.key_pattern.startswith("grid.up") or f.key_pattern.startswith("grid.low")) and "netcdf" not in f.key_pattern]
     netcdf_fields = [f for f in GRID_FIELDS if "netcdf" in f.key_pattern or f.key_pattern.startswith("grid.var")]
 
     return ui.page_fluid(

@@ -1,0 +1,12 @@
+# Output parameters
+output.dir.path ; output
+output.file.prefix ; biscay
+output.biomass.enabled ; true
+output.abundance.enabled ; true
+output.yield.biomass.enabled ; true
+output.diet.composition.enabled ; true
+output.trophiclevel.enabled ; true
+output.spatial.enabled ; false
+output.start.year ; 20
+output.frequency.ndtperyear ; 24
+output.recordfrequency.ndt ; 1
