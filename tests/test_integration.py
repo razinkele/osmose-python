@@ -29,9 +29,15 @@ def _build_full_registry() -> ParameterRegistry:
     """Build a registry with all known OSMOSE parameter definitions."""
     reg = ParameterRegistry()
     for fields in [
-        SIMULATION_FIELDS, SPECIES_FIELDS, GRID_FIELDS,
-        PREDATION_FIELDS, FISHING_FIELDS, MOVEMENT_FIELDS,
-        LTL_FIELDS, OUTPUT_FIELDS, BIOENERGETICS_FIELDS,
+        SIMULATION_FIELDS,
+        SPECIES_FIELDS,
+        GRID_FIELDS,
+        PREDATION_FIELDS,
+        FISHING_FIELDS,
+        MOVEMENT_FIELDS,
+        LTL_FIELDS,
+        OUTPUT_FIELDS,
+        BIOENERGETICS_FIELDS,
         ECONOMICS_FIELDS,
     ]:
         for f in fields:
@@ -105,8 +111,9 @@ class TestLoadExampleConfig:
         reader = OsmoseConfigReader()
         config = reader.read(EXAMPLES / "osm_all-parameters.csv")
         # Exclude osmose.configuration.* meta-keys for content count
-        content_keys = {k: v for k, v in config.items()
-                        if not k.startswith("osmose.configuration.")}
+        content_keys = {
+            k: v for k, v in config.items() if not k.startswith("osmose.configuration.")
+        }
         # Expect at least 80 non-meta keys from all sub-files combined
         assert len(content_keys) >= 80, (
             f"Expected at least 80 content keys, got {len(content_keys)}"
@@ -123,7 +130,7 @@ class TestSchemaMapping:
 
     def test_known_keys_match_schema(self):
         reader = OsmoseConfigReader()
-        config = reader.read(EXAMPLES / "osm_all-parameters.csv")
+        reader.read(EXAMPLES / "osm_all-parameters.csv")
         registry = _build_full_registry()
 
         # These keys must be recognized by the schema
@@ -200,19 +207,17 @@ class TestFullRoundtrip:
             writer = OsmoseConfigWriter()
             # Strip osmose.configuration.* meta-keys before writing
             # (the writer generates its own references)
-            content = {k: v for k, v in original.items()
-                       if not k.startswith("osmose.configuration.")}
+            content = {
+                k: v for k, v in original.items() if not k.startswith("osmose.configuration.")
+            }
             writer.write(content, Path(tmpdir))
 
             roundtripped = reader.read(Path(tmpdir) / "osm_all-parameters.csv")
 
             for key, value in content.items():
-                assert key in roundtripped, (
-                    f"Key lost after roundtrip: {key}"
-                )
+                assert key in roundtripped, f"Key lost after roundtrip: {key}"
                 assert roundtripped[key] == value, (
-                    f"Value mismatch for '{key}': "
-                    f"expected '{value}', got '{roundtripped[key]}'"
+                    f"Value mismatch for '{key}': expected '{value}', got '{roundtripped[key]}'"
                 )
 
     def test_roundtrip_generates_correct_subfiles(self):
@@ -220,8 +225,9 @@ class TestFullRoundtrip:
         original = reader.read(EXAMPLES / "osm_all-parameters.csv")
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            content = {k: v for k, v in original.items()
-                       if not k.startswith("osmose.configuration.")}
+            content = {
+                k: v for k, v in original.items() if not k.startswith("osmose.configuration.")
+            }
             writer = OsmoseConfigWriter()
             writer.write(content, Path(tmpdir))
 
@@ -236,17 +242,16 @@ class TestFullRoundtrip:
                 "osm_param-movement.csv",
             ]
             for fname in expected_subfiles:
-                assert (Path(tmpdir) / fname).exists(), (
-                    f"Expected sub-file not generated: {fname}"
-                )
+                assert (Path(tmpdir) / fname).exists(), f"Expected sub-file not generated: {fname}"
 
     def test_roundtrip_master_has_references(self):
         reader = OsmoseConfigReader()
         original = reader.read(EXAMPLES / "osm_all-parameters.csv")
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            content = {k: v for k, v in original.items()
-                       if not k.startswith("osmose.configuration.")}
+            content = {
+                k: v for k, v in original.items() if not k.startswith("osmose.configuration.")
+            }
             writer = OsmoseConfigWriter()
             writer.write(content, Path(tmpdir))
 
@@ -271,8 +276,9 @@ class TestFullRoundtrip:
         original = reader.read(EXAMPLES / "osm_all-parameters.csv")
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            content = {k: v for k, v in original.items()
-                       if not k.startswith("osmose.configuration.")}
+            content = {
+                k: v for k, v in original.items() if not k.startswith("osmose.configuration.")
+            }
             writer = OsmoseConfigWriter()
             writer.write(content, Path(tmpdir))
 
@@ -294,8 +300,9 @@ class TestFullRoundtrip:
         original = reader.read(EXAMPLES / "osm_all-parameters.csv")
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            content = {k: v for k, v in original.items()
-                       if not k.startswith("osmose.configuration.")}
+            content = {
+                k: v for k, v in original.items() if not k.startswith("osmose.configuration.")
+            }
             writer = OsmoseConfigWriter()
             writer.write(content, Path(tmpdir))
 
@@ -311,18 +318,19 @@ class TestFullRoundtrip:
         original = reader.read(EXAMPLES / "osm_all-parameters.csv")
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            content = {k: v for k, v in original.items()
-                       if not k.startswith("osmose.configuration.")}
+            content = {
+                k: v for k, v in original.items() if not k.startswith("osmose.configuration.")
+            }
             writer = OsmoseConfigWriter()
             writer.write(content, Path(tmpdir))
 
             result = reader.read(Path(tmpdir) / "osm_all-parameters.csv")
-            result_content = {k: v for k, v in result.items()
-                              if not k.startswith("osmose.configuration.")}
+            result_content = {
+                k: v for k, v in result.items() if not k.startswith("osmose.configuration.")
+            }
 
             assert len(result_content) == len(content), (
-                f"Key count changed: original={len(content)}, "
-                f"roundtripped={len(result_content)}"
+                f"Key count changed: original={len(content)}, roundtripped={len(result_content)}"
             )
 
 
@@ -342,8 +350,7 @@ class TestSchemaConfigCoherence:
         # Count distinct species by looking for species.name.sp* keys
         species_names = [k for k in config if k.startswith("species.name.sp")]
         assert len(species_names) == nspecies, (
-            f"simulation.nspecies={nspecies} but found "
-            f"{len(species_names)} species name keys"
+            f"simulation.nspecies={nspecies} but found {len(species_names)} species name keys"
         )
 
     def test_all_species_have_required_params(self):
@@ -360,9 +367,7 @@ class TestSchemaConfigCoherence:
         for i in range(nspecies):
             for prefix in required_prefixes:
                 key = f"{prefix}.sp{i}"
-                assert key in config, (
-                    f"Required species param missing: {key}"
-                )
+                assert key in config, f"Required species param missing: {key}"
 
     def test_grid_coordinates_are_valid(self):
         reader = OsmoseConfigReader()
@@ -394,6 +399,4 @@ class TestSchemaConfigCoherence:
             key = f"mortality.fishing.rate.sp{i}"
             if key in config:
                 rate = float(config[key])
-                assert 0 <= rate <= 2.0, (
-                    f"Implausible fishing rate for sp{i}: {rate}"
-                )
+                assert 0 <= rate <= 2.0, f"Implausible fishing rate for sp{i}: {rate}"

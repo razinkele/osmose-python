@@ -1,6 +1,6 @@
 """Scenario management page."""
 
-from shiny import ui, reactive, render
+from shiny import ui, render
 
 
 def scenarios_ui():
@@ -12,7 +12,9 @@ def scenarios_ui():
                 ui.input_text("scenario_name", "Scenario name"),
                 ui.input_text("scenario_desc", "Description"),
                 ui.input_text("scenario_tags", "Tags (comma-separated)"),
-                ui.input_action_button("btn_save_scenario", "Save Current Config", class_="btn-success w-100"),
+                ui.input_action_button(
+                    "btn_save_scenario", "Save Current Config", class_="btn-success w-100"
+                ),
             ),
             # Middle: Scenario list
             ui.card(
@@ -22,7 +24,9 @@ def scenarios_ui():
                 ui.layout_columns(
                     ui.input_action_button("btn_load_scenario", "Load", class_="btn-primary w-100"),
                     ui.input_action_button("btn_fork_scenario", "Fork", class_="btn-info w-100"),
-                    ui.input_action_button("btn_delete_scenario", "Delete", class_="btn-danger w-100"),
+                    ui.input_action_button(
+                        "btn_delete_scenario", "Delete", class_="btn-danger w-100"
+                    ),
                     col_widths=[4, 4, 4],
                 ),
             ),

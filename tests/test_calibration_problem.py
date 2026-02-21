@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import numpy as np
-import pytest
 from osmose.calibration.problem import FreeParameter, OsmoseCalibrationProblem
 
 

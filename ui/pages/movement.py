@@ -1,14 +1,12 @@
 """Movement / spatial distribution page."""
 
-from shiny import ui, reactive, render
+from shiny import ui, render
 from osmose.schema.movement import MOVEMENT_FIELDS
 from ui.components.param_form import render_field
 
 
 def movement_ui():
     global_fields = [f for f in MOVEMENT_FIELDS if not f.indexed]
-    map_fields = [f for f in MOVEMENT_FIELDS if f.indexed and "map" in f.key_pattern]
-    per_species_fields = [f for f in MOVEMENT_FIELDS if f.indexed and "map" not in f.key_pattern]
 
     return ui.page_fluid(
         ui.layout_columns(

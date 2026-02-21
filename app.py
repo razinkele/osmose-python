@@ -1,6 +1,6 @@
 """OSMOSE Python Interface - main Shiny application."""
 
-from shiny import App, ui, reactive
+from shiny import App, ui
 from ui.theme import THEME
 
 from ui.pages.setup import setup_ui, setup_server

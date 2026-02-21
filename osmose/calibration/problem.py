@@ -14,7 +14,8 @@ from pymoo.core.problem import Problem
 @dataclass
 class FreeParameter:
     """A parameter to optimize during calibration."""
-    key: str              # OSMOSE parameter key
+
+    key: str  # OSMOSE parameter key
     lower_bound: float
     upper_bound: float
     transform: str = "linear"  # "linear" or "log"
@@ -68,7 +69,7 @@ class OsmoseCalibrationProblem(Problem):
             for j, fp in enumerate(self.free_params):
                 val = params[j]
                 if fp.transform == "log":
-                    val = 10 ** val
+                    val = 10**val
                 overrides[fp.key] = str(val)
 
             try:
@@ -104,6 +105,7 @@ class OsmoseCalibrationProblem(Problem):
 
         # Compute objectives
         from osmose.results import OsmoseResults
+
         results = OsmoseResults(output_dir)
         obj_values = []
         for fn in self.objective_fns:

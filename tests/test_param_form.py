@@ -1,6 +1,5 @@
 """Tests for auto-generated parameter form components."""
 
-from shiny import ui
 from osmose.schema.base import OsmoseField, ParamType
 from ui.components.param_form import render_field, render_category, _guess_step
 

@@ -14,9 +14,15 @@ from osmose.schema.economics import ECONOMICS_FIELDS
 def build_full_registry() -> ParameterRegistry:
     reg = ParameterRegistry()
     for fields in [
-        SIMULATION_FIELDS, SPECIES_FIELDS, GRID_FIELDS,
-        PREDATION_FIELDS, FISHING_FIELDS, MOVEMENT_FIELDS,
-        LTL_FIELDS, OUTPUT_FIELDS, BIOENERGETICS_FIELDS,
+        SIMULATION_FIELDS,
+        SPECIES_FIELDS,
+        GRID_FIELDS,
+        PREDATION_FIELDS,
+        FISHING_FIELDS,
+        MOVEMENT_FIELDS,
+        LTL_FIELDS,
+        OUTPUT_FIELDS,
+        BIOENERGETICS_FIELDS,
         ECONOMICS_FIELDS,
     ]:
         for f in fields:
@@ -27,9 +33,20 @@ def build_full_registry() -> ParameterRegistry:
 def test_full_registry_has_all_categories():
     reg = build_full_registry()
     cats = set(reg.categories())
-    expected = {"simulation", "growth", "reproduction", "predation",
-                "mortality", "fishing", "grid", "movement", "ltl",
-                "output", "bioenergetics", "economics"}
+    expected = {
+        "simulation",
+        "growth",
+        "reproduction",
+        "predation",
+        "mortality",
+        "fishing",
+        "grid",
+        "movement",
+        "ltl",
+        "output",
+        "bioenergetics",
+        "economics",
+    }
     assert expected.issubset(cats), f"Missing categories: {expected - cats}"
 
 

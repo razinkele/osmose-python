@@ -1,7 +1,7 @@
 # ui/pages/calibration.py
 """Calibration page - multi-objective optimization and sensitivity analysis."""
 
-from shiny import ui, reactive, render
+from shiny import ui, render
 
 
 def calibration_ui():
@@ -10,10 +10,14 @@ def calibration_ui():
             # Left: Configuration
             ui.card(
                 ui.card_header("Calibration Setup"),
-                ui.input_select("cal_algorithm", "Algorithm", choices={
-                    "nsga2": "NSGA-II (Direct)",
-                    "surrogate": "GP Surrogate",
-                }),
+                ui.input_select(
+                    "cal_algorithm",
+                    "Algorithm",
+                    choices={
+                        "nsga2": "NSGA-II (Direct)",
+                        "surrogate": "GP Surrogate",
+                    },
+                ),
                 ui.input_numeric("cal_pop_size", "Population size", value=50, min=10, max=500),
                 ui.input_numeric("cal_generations", "Generations", value=100, min=10, max=1000),
                 ui.input_numeric("cal_n_parallel", "Parallel workers", value=4, min=1, max=32),
@@ -27,27 +31,43 @@ def calibration_ui():
                 ui.input_file("observed_diet", "Upload observed diet matrix CSV", accept=[".csv"]),
                 ui.hr(),
                 ui.layout_columns(
-                    ui.input_action_button("btn_start_cal", "Start Calibration", class_="btn-success w-100"),
+                    ui.input_action_button(
+                        "btn_start_cal", "Start Calibration", class_="btn-success w-100"
+                    ),
                     ui.input_action_button("btn_stop_cal", "Stop", class_="btn-danger w-100"),
                     col_widths=[8, 4],
                 ),
             ),
             # Right: Results
             ui.navset_card_tab(
-                ui.nav_panel("Progress", ui.div(
-                    ui.output_text("cal_status"),
-                    ui.output_ui("cal_progress"),
-                )),
-                ui.nav_panel("Pareto Front", ui.div(
-                    ui.output_ui("pareto_plot_placeholder"),
-                )),
-                ui.nav_panel("Best Parameters", ui.div(
-                    ui.output_ui("best_params_table"),
-                )),
-                ui.nav_panel("Sensitivity", ui.div(
-                    ui.input_action_button("btn_sensitivity", "Run Sensitivity Analysis", class_="btn-info w-100"),
-                    ui.output_ui("sensitivity_plot_placeholder"),
-                )),
+                ui.nav_panel(
+                    "Progress",
+                    ui.div(
+                        ui.output_text("cal_status"),
+                        ui.output_ui("cal_progress"),
+                    ),
+                ),
+                ui.nav_panel(
+                    "Pareto Front",
+                    ui.div(
+                        ui.output_ui("pareto_plot_placeholder"),
+                    ),
+                ),
+                ui.nav_panel(
+                    "Best Parameters",
+                    ui.div(
+                        ui.output_ui("best_params_table"),
+                    ),
+                ),
+                ui.nav_panel(
+                    "Sensitivity",
+                    ui.div(
+                        ui.input_action_button(
+                            "btn_sensitivity", "Run Sensitivity Analysis", class_="btn-info w-100"
+                        ),
+                        ui.output_ui("sensitivity_plot_placeholder"),
+                    ),
+                ),
             ),
             col_widths=[4, 8],
         ),
@@ -80,7 +100,7 @@ def calibration_server(input, output, session):
         return ui.div(
             "Calibration progress will appear here.",
             style="height: 300px; display: flex; align-items: center; justify-content: center; "
-                  "border: 1px dashed #4e5d6c; border-radius: 8px; color: #999;",
+            "border: 1px dashed #4e5d6c; border-radius: 8px; color: #999;",
         )
 
     @render.ui
@@ -88,7 +108,7 @@ def calibration_server(input, output, session):
         return ui.div(
             "Pareto front plot will appear here after calibration.",
             style="height: 400px; display: flex; align-items: center; justify-content: center; "
-                  "border: 1px dashed #4e5d6c; border-radius: 8px; color: #999;",
+            "border: 1px dashed #4e5d6c; border-radius: 8px; color: #999;",
         )
 
     @render.ui
@@ -103,5 +123,5 @@ def calibration_server(input, output, session):
         return ui.div(
             "Sensitivity analysis results will appear here.",
             style="height: 400px; display: flex; align-items: center; justify-content: center; "
-                  "border: 1px dashed #4e5d6c; border-radius: 8px; color: #999;",
+            "border: 1px dashed #4e5d6c; border-radius: 8px; color: #999;",
         )

@@ -1,8 +1,6 @@
-import tempfile
-from pathlib import Path
 import pytest
 
-from osmose.scenarios import Scenario, ScenarioManager, ParamDiff
+from osmose.scenarios import Scenario, ScenarioManager
 
 
 @pytest.fixture

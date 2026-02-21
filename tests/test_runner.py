@@ -21,6 +21,7 @@ from osmose.runner import OsmoseRunner, RunResult
 # the fake scripts can run without a real JVM.
 # ---------------------------------------------------------------------------
 
+
 class _ScriptRunner(OsmoseRunner):
     """OsmoseRunner variant that invokes scripts via ``python <script>``
     instead of ``java -jar <jar>`` so tests can use plain Python scripts."""
@@ -45,15 +46,16 @@ class _ScriptRunner(OsmoseRunner):
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def fake_jar(tmp_path: Path) -> Path:
     """Create a fake 'JAR' that's actually a Python script mimicking OSMOSE output."""
     script = tmp_path / "fake_osmose.py"
     script.write_text(
-        'import sys\n'
+        "import sys\n"
         'print("OSMOSE v4.3.3")\n'
         'print(f"Config: {sys.argv[1]}")\n'
-        'for i in range(5):\n'
+        "for i in range(5):\n"
         '    print(f"Step {i+1}/5")\n'
         'print("Simulation complete")\n'
     )
@@ -65,9 +67,7 @@ def failing_jar(tmp_path: Path) -> Path:
     """Create a fake JAR that exits with error."""
     script = tmp_path / "fail_osmose.py"
     script.write_text(
-        'import sys\n'
-        'print("Error: config not found", file=sys.stderr)\n'
-        'sys.exit(1)\n'
+        'import sys\nprint("Error: config not found", file=sys.stderr)\nsys.exit(1)\n'
     )
     return script
 
@@ -82,6 +82,7 @@ def fake_config(tmp_path: Path) -> Path:
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 async def test_runner_successful_run(fake_jar: Path, fake_config: Path) -> None:
     runner = _ScriptRunner(jar_path=fake_jar, java_cmd=sys.executable)
@@ -109,11 +110,7 @@ async def test_runner_handles_failure(failing_jar: Path, fake_config: Path) -> N
 async def test_runner_passes_overrides(tmp_path: Path) -> None:
     """Create a script that prints its arguments so we can verify overrides."""
     script = tmp_path / "args_osmose.py"
-    script.write_text(
-        'import sys\n'
-        'for arg in sys.argv[1:]:\n'
-        '    print(arg)\n'
-    )
+    script.write_text("import sys\nfor arg in sys.argv[1:]:\n    print(arg)\n")
     config = tmp_path / "config.csv"
     config.write_text("x ; 1\n")
     runner = _ScriptRunner(jar_path=script, java_cmd=sys.executable)
@@ -126,9 +123,7 @@ async def test_runner_passes_overrides(tmp_path: Path) -> None:
 
 async def test_runner_passes_output_dir(fake_config: Path, tmp_path: Path) -> None:
     script = tmp_path / "args2.py"
-    script.write_text(
-        'import sys\nfor arg in sys.argv[1:]:\n    print(arg)\n'
-    )
+    script.write_text("import sys\nfor arg in sys.argv[1:]:\n    print(arg)\n")
     runner = _ScriptRunner(jar_path=script, java_cmd=sys.executable)
     out = tmp_path / "myoutput"
     result = await runner.run(config_path=fake_config, output_dir=out)
@@ -163,9 +158,9 @@ async def test_runner_cancel(tmp_path: Path) -> None:
     """Test that cancel terminates a long-running process."""
     script = tmp_path / "slow.py"
     script.write_text(
-        'import time\n'
+        "import time\n"
         'print("starting", flush=True)\n'
-        'time.sleep(60)\n'  # Would run for 60 seconds
+        "time.sleep(60)\n"  # Would run for 60 seconds
         'print("done")\n'
     )
     config = tmp_path / "config.csv"

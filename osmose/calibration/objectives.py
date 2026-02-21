@@ -7,7 +7,9 @@ import numpy as np
 import pandas as pd
 
 
-def biomass_rmse(simulated: pd.DataFrame, observed: pd.DataFrame, species: str | None = None) -> float:
+def biomass_rmse(
+    simulated: pd.DataFrame, observed: pd.DataFrame, species: str | None = None
+) -> float:
     """Root mean square error of biomass time series.
 
     Args:
@@ -28,10 +30,12 @@ def biomass_rmse(simulated: pd.DataFrame, observed: pd.DataFrame, species: str |
         return float("inf")
 
     diff = merged["biomass_sim"] - merged["biomass_obs"]
-    return float(np.sqrt(np.mean(diff ** 2)))
+    return float(np.sqrt(np.mean(diff**2)))
 
 
-def abundance_rmse(simulated: pd.DataFrame, observed: pd.DataFrame, species: str | None = None) -> float:
+def abundance_rmse(
+    simulated: pd.DataFrame, observed: pd.DataFrame, species: str | None = None
+) -> float:
     """RMSE for abundance time series."""
     if species:
         simulated = simulated[simulated["species"] == species]
@@ -42,7 +46,7 @@ def abundance_rmse(simulated: pd.DataFrame, observed: pd.DataFrame, species: str
         return float("inf")
 
     diff = merged["abundance_sim"] - merged["abundance_obs"]
-    return float(np.sqrt(np.mean(diff ** 2)))
+    return float(np.sqrt(np.mean(diff**2)))
 
 
 def diet_distance(simulated: pd.DataFrame, observed: pd.DataFrame) -> float:

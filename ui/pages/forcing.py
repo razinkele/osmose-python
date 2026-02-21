@@ -1,15 +1,14 @@
 """Environmental forcing / LTL configuration page."""
 
-from shiny import ui, reactive, render
+from shiny import ui, render
 from osmose.schema.ltl import LTL_FIELDS
 from osmose.schema.bioenergetics import BIOENERGETICS_FIELDS
-from ui.components.param_form import render_field, render_category
+from ui.components.param_form import render_field
 
 
 def forcing_ui():
     # Separate global LTL settings from per-resource fields
     global_ltl = [f for f in LTL_FIELDS if not f.indexed]
-    resource_fields = [f for f in LTL_FIELDS if f.indexed]
 
     # Temperature/environmental fields from bioenergetics
     temp_fields = [f for f in BIOENERGETICS_FIELDS if f.key_pattern.startswith("temperature.")]
@@ -21,7 +20,9 @@ def forcing_ui():
                 ui.h5("Global LTL Settings"),
                 *[render_field(f) for f in global_ltl],
                 ui.hr(),
-                ui.input_numeric("n_resources", "Number of resource groups", value=3, min=0, max=20),
+                ui.input_numeric(
+                    "n_resources", "Number of resource groups", value=3, min=0, max=20
+                ),
                 ui.output_ui("resource_panels"),
             ),
             ui.card(
@@ -29,7 +30,9 @@ def forcing_ui():
                 ui.h5("Temperature"),
                 *[render_field(f) for f in temp_fields if not f.advanced],
                 ui.hr(),
-                ui.p("Upload NetCDF forcing data for spatially-varying temperature, oxygen, or other environmental variables."),
+                ui.p(
+                    "Upload NetCDF forcing data for spatially-varying temperature, oxygen, or other environmental variables."
+                ),
             ),
             col_widths=[7, 5],
         ),

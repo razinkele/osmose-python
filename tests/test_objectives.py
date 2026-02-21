@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from osmose.calibration.objectives import biomass_rmse, abundance_rmse, diet_distance, normalized_rmse
+from osmose.calibration.objectives import biomass_rmse, diet_distance, normalized_rmse
 
 
 def test_biomass_rmse_identical():

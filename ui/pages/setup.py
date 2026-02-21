@@ -1,6 +1,6 @@
 """Species & Simulation setup page."""
 
-from shiny import ui, reactive, render, module
+from shiny import ui, render
 from osmose.schema.simulation import SIMULATION_FIELDS
 from osmose.schema.species import SPECIES_FIELDS
 from ui.components.param_form import render_category, render_species_params

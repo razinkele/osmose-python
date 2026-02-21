@@ -1,14 +1,12 @@
 """Fishing configuration page."""
 
-from shiny import ui, reactive, render
+from shiny import ui, render
 from osmose.schema.fishing import FISHING_FIELDS
 from ui.components.param_form import render_field
 
 
 def fishing_ui():
     global_fields = [f for f in FISHING_FIELDS if not f.indexed]
-    fishery_fields = [f for f in FISHING_FIELDS if f.indexed and "fsh" in f.key_pattern]
-    mpa_fields = [f for f in FISHING_FIELDS if f.indexed and "mpa" in f.key_pattern]
 
     return ui.page_fluid(
         ui.layout_columns(

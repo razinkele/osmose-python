@@ -51,5 +51,12 @@ Thumbs.db
 osmose-java/*.jar
 osmose-java/*.class
 
+# Shiny
+.shinylive/
+
+# Secrets
+.env
+*.pem
+
 # Data outputs
 data/scenarios/*/output/

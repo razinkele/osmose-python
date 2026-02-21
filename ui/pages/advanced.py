@@ -1,6 +1,6 @@
 """Advanced raw config editor page."""
 
-from shiny import ui, reactive, render
+from shiny import ui, render
 from osmose.schema.registry import ParameterRegistry
 from osmose.schema.simulation import SIMULATION_FIELDS
 from osmose.schema.species import SPECIES_FIELDS
@@ -16,10 +16,18 @@ from osmose.schema.economics import ECONOMICS_FIELDS
 
 def _build_registry():
     reg = ParameterRegistry()
-    for fields in [SIMULATION_FIELDS, SPECIES_FIELDS, GRID_FIELDS,
-                   PREDATION_FIELDS, FISHING_FIELDS, MOVEMENT_FIELDS,
-                   LTL_FIELDS, OUTPUT_FIELDS, BIOENERGETICS_FIELDS,
-                   ECONOMICS_FIELDS]:
+    for fields in [
+        SIMULATION_FIELDS,
+        SPECIES_FIELDS,
+        GRID_FIELDS,
+        PREDATION_FIELDS,
+        FISHING_FIELDS,
+        MOVEMENT_FIELDS,
+        LTL_FIELDS,
+        OUTPUT_FIELDS,
+        BIOENERGETICS_FIELDS,
+        ECONOMICS_FIELDS,
+    ]:
         for f in fields:
             reg.register(f)
     return reg
@@ -34,14 +42,23 @@ def advanced_ui():
             # Controls
             ui.card(
                 ui.card_header("Config I/O"),
-                ui.input_file("import_config", "Import OSMOSE config", accept=[".csv", ".properties"]),
-                ui.download_button("export_config", "Export Current Config", class_="btn-primary w-100"),
+                ui.input_file(
+                    "import_config", "Import OSMOSE config", accept=[".csv", ".properties"]
+                ),
+                ui.download_button(
+                    "export_config", "Export Current Config", class_="btn-primary w-100"
+                ),
             ),
             ui.card(
                 ui.card_header("Filters"),
-                ui.input_select("adv_category", "Category", choices={c: c.title() for c in categories}),
+                ui.input_select(
+                    "adv_category", "Category", choices={c: c.title() for c in categories}
+                ),
                 ui.input_text("adv_search", "Search parameters", placeholder="Type to filter..."),
-                ui.p(f"Total parameters in registry: {len(registry.all_fields())}", style="color: #999; font-size: 12px;"),
+                ui.p(
+                    f"Total parameters in registry: {len(registry.all_fields())}",
+                    style="color: #999; font-size: 12px;",
+                ),
             ),
             col_widths=[4, 8],
         ),
@@ -66,7 +83,11 @@ def advanced_server(input, output, session):
             fields = registry.fields_by_category(category)
 
         if search:
-            fields = [f for f in fields if search in f.key_pattern.lower() or search in f.description.lower()]
+            fields = [
+                f
+                for f in fields
+                if search in f.key_pattern.lower() or search in f.description.lower()
+            ]
 
         if not fields:
             return ui.div("No parameters match your filter.", style="padding: 20px; color: #999;")
@@ -79,7 +100,9 @@ def advanced_server(input, output, session):
                     ui.tags.td(f.param_type.value),
                     ui.tags.td(str(f.default) if f.default is not None else "-"),
                     ui.tags.td(f.category),
-                    ui.tags.td(f.description[:60] + "..." if len(f.description) > 60 else f.description),
+                    ui.tags.td(
+                        f.description[:60] + "..." if len(f.description) > 60 else f.description
+                    ),
                 )
             )
 

@@ -168,15 +168,18 @@ def _make_flag_description(flag: str) -> str:
     # Strip "output." prefix and ".enabled" suffix
     middle = flag.removeprefix("output.").removesuffix(".enabled")
     # Replace dots with spaces, clean up common patterns
-    words = middle.replace(".", " ").replace("bysize", "by-size").replace(
-        "byage", "by-age"
-    ).replace("byweight", "by-weight").replace(
-        "bytl", "by-trophic-level"
-    ).replace("meantl", "mean trophic level").replace(
-        "meansize", "mean size"
-    ).replace("meanweight", "mean weight").replace(
-        "perspecies", "per-species"
-    ).replace("netcdf", "NetCDF")
+    words = (
+        middle.replace(".", " ")
+        .replace("bysize", "by-size")
+        .replace("byage", "by-age")
+        .replace("byweight", "by-weight")
+        .replace("bytl", "by-trophic-level")
+        .replace("meantl", "mean trophic level")
+        .replace("meansize", "mean size")
+        .replace("meanweight", "mean weight")
+        .replace("perspecies", "per-species")
+        .replace("netcdf", "NetCDF")
+    )
     return f"Enable {words} output"
 
 

@@ -10,12 +10,20 @@ def run_ui():
             ui.card(
                 ui.card_header("Run Configuration"),
                 ui.input_text("jar_path", "OSMOSE JAR path", value="osmose-java/osmose.jar"),
-                ui.input_text("java_opts", "Java options", value="-Xmx2g", placeholder="-Xmx4g -Xms1g"),
-                ui.input_text_area("param_overrides", "Parameter overrides (key=value, one per line)", rows=4),
+                ui.input_text(
+                    "java_opts", "Java options", value="-Xmx2g", placeholder="-Xmx4g -Xms1g"
+                ),
+                ui.input_text_area(
+                    "param_overrides", "Parameter overrides (key=value, one per line)", rows=4
+                ),
                 ui.hr(),
                 ui.layout_columns(
-                    ui.input_action_button("btn_run", "Start Run", class_="btn-success btn-lg w-100"),
-                    ui.input_action_button("btn_cancel", "Cancel", class_="btn-danger btn-lg w-100"),
+                    ui.input_action_button(
+                        "btn_run", "Start Run", class_="btn-success btn-lg w-100"
+                    ),
+                    ui.input_action_button(
+                        "btn_cancel", "Cancel", class_="btn-danger btn-lg w-100"
+                    ),
                     col_widths=[6, 6],
                 ),
                 ui.hr(),
@@ -47,6 +55,6 @@ def run_server(input, output, session):
         return ui.tags.pre(
             text,
             style="background: #111; color: #0f0; height: 500px; overflow-y: auto; "
-                  "padding: 12px; border-radius: 6px; font-family: 'Courier New', monospace; "
-                  "font-size: 13px; white-space: pre-wrap;",
+            "padding: 12px; border-radius: 6px; font-family: 'Courier New', monospace; "
+            "font-size: 13px; white-space: pre-wrap;",
         )

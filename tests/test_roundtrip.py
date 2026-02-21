@@ -154,17 +154,21 @@ def test_roundtrip_master_has_configuration_references():
         master_only = reader.read_file(Path(tmpdir) / "osm_all-parameters.csv")
 
         config_refs = {
-            k: v for k, v in master_only.items()
-            if k.startswith("osmose.configuration.")
+            k: v for k, v in master_only.items() if k.startswith("osmose.configuration.")
         }
 
         expected_suffixes = {
-            "species", "grid", "predation", "fishing",
-            "movement", "ltl", "output", "bioenergetics", "economics",
+            "species",
+            "grid",
+            "predation",
+            "fishing",
+            "movement",
+            "ltl",
+            "output",
+            "bioenergetics",
+            "economics",
         }
-        actual_suffixes = {
-            k.split("osmose.configuration.")[1] for k in config_refs
-        }
+        actual_suffixes = {k.split("osmose.configuration.")[1] for k in config_refs}
         assert actual_suffixes == expected_suffixes, (
             f"Config references mismatch: expected {expected_suffixes}, got {actual_suffixes}"
         )

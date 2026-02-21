@@ -17,9 +17,18 @@ def test_registry_register_and_retrieve():
 
 def test_registry_fields_by_category():
     reg = ParameterRegistry()
-    f1 = OsmoseField(key_pattern="species.linf.sp{idx}", param_type=ParamType.FLOAT, category="growth", indexed=True)
-    f2 = OsmoseField(key_pattern="species.k.sp{idx}", param_type=ParamType.FLOAT, category="growth", indexed=True)
-    f3 = OsmoseField(key_pattern="simulation.time.ndtperyear", param_type=ParamType.INT, category="simulation")
+    f1 = OsmoseField(
+        key_pattern="species.linf.sp{idx}",
+        param_type=ParamType.FLOAT,
+        category="growth",
+        indexed=True,
+    )
+    f2 = OsmoseField(
+        key_pattern="species.k.sp{idx}", param_type=ParamType.FLOAT, category="growth", indexed=True
+    )
+    f3 = OsmoseField(
+        key_pattern="simulation.time.ndtperyear", param_type=ParamType.INT, category="simulation"
+    )
     reg.register(f1)
     reg.register(f2)
     reg.register(f3)
@@ -31,7 +40,12 @@ def test_registry_fields_by_category():
 
 def test_registry_get_field_by_pattern():
     reg = ParameterRegistry()
-    f = OsmoseField(key_pattern="species.linf.sp{idx}", param_type=ParamType.FLOAT, category="growth", indexed=True)
+    f = OsmoseField(
+        key_pattern="species.linf.sp{idx}",
+        param_type=ParamType.FLOAT,
+        category="growth",
+        indexed=True,
+    )
     reg.register(f)
     result = reg.get_field("species.linf.sp{idx}")
     assert result is f
@@ -53,14 +67,16 @@ def test_registry_categories():
 
 def test_registry_validate_config():
     reg = ParameterRegistry()
-    reg.register(OsmoseField(
-        key_pattern="species.k.sp{idx}",
-        param_type=ParamType.FLOAT,
-        min_val=0.01,
-        max_val=2.0,
-        indexed=True,
-        category="growth",
-    ))
+    reg.register(
+        OsmoseField(
+            key_pattern="species.k.sp{idx}",
+            param_type=ParamType.FLOAT,
+            min_val=0.01,
+            max_val=2.0,
+            indexed=True,
+            category="growth",
+        )
+    )
     errors = reg.validate({"species.k.sp0": 0.5})
     assert errors == []
     errors = reg.validate({"species.k.sp0": 5.0})
@@ -69,7 +85,12 @@ def test_registry_validate_config():
 
 def test_registry_match_field():
     reg = ParameterRegistry()
-    f = OsmoseField(key_pattern="species.linf.sp{idx}", param_type=ParamType.FLOAT, category="growth", indexed=True)
+    f = OsmoseField(
+        key_pattern="species.linf.sp{idx}",
+        param_type=ParamType.FLOAT,
+        category="growth",
+        indexed=True,
+    )
     reg.register(f)
     assert reg.match_field("species.linf.sp0") is f
     assert reg.match_field("species.linf.sp12") is f

@@ -7,12 +7,12 @@ import shutil
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 
 
 @dataclass
 class Scenario:
     """A named, versioned OSMOSE configuration snapshot."""
+
     name: str
     description: str = ""
     created_at: str = ""  # ISO format
@@ -32,6 +32,7 @@ class Scenario:
 @dataclass
 class ParamDiff:
     """A single parameter difference between two scenarios."""
+
     key: str
     value_a: str | None
     value_b: str | None
@@ -69,12 +70,14 @@ class ScenarioManager:
             if d.is_dir() and json_path.exists():
                 with open(json_path) as f:
                     data = json.load(f)
-                results.append({
-                    "name": data["name"],
-                    "description": data.get("description", ""),
-                    "modified_at": data.get("modified_at", ""),
-                    "tags": data.get("tags", []),
-                })
+                results.append(
+                    {
+                        "name": data["name"],
+                        "description": data.get("description", ""),
+                        "modified_at": data.get("modified_at", ""),
+                        "tags": data.get("tags", []),
+                    }
+                )
         return results
 
     def delete(self, name: str) -> None:

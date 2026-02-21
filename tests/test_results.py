@@ -1,8 +1,5 @@
 """Tests for osmose.results – OSMOSE output file reader."""
 
-import tempfile
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -16,36 +13,42 @@ def output_dir(tmp_path):
     """Create a fake OSMOSE output directory with test files."""
     # Create biomass CSVs
     for sp_name in ["Anchovy", "Sardine"]:
-        df = pd.DataFrame({
-            "time": range(10),
-            "biomass": np.random.rand(10) * 1000,
-        })
+        df = pd.DataFrame(
+            {
+                "time": range(10),
+                "biomass": np.random.rand(10) * 1000,
+            }
+        )
         df.to_csv(tmp_path / f"osm_biomass_{sp_name}.csv", index=False)
 
     # Create abundance CSVs
     for sp_name in ["Anchovy", "Sardine"]:
-        df = pd.DataFrame({
-            "time": range(10),
-            "abundance": np.random.randint(1000, 100000, 10),
-        })
+        df = pd.DataFrame(
+            {
+                "time": range(10),
+                "abundance": np.random.randint(1000, 100000, 10),
+            }
+        )
         df.to_csv(tmp_path / f"osm_abundance_{sp_name}.csv", index=False)
 
     # Create yield CSV
     df = pd.DataFrame({"time": range(10), "yield": np.random.rand(10) * 100})
-    df.to_csv(tmp_path / f"osm_yield_Anchovy.csv", index=False)
+    df.to_csv(tmp_path / "osm_yield_Anchovy.csv", index=False)
 
     # Create a spatial NetCDF
-    ds = xr.Dataset({
-        "biomass": xr.DataArray(
-            np.random.rand(10, 5, 5),
-            dims=["time", "lat", "lon"],
-            coords={
-                "time": range(10),
-                "lat": np.linspace(55, 65, 5),
-                "lon": np.linspace(20, 30, 5),
-            },
-        )
-    })
+    ds = xr.Dataset(
+        {
+            "biomass": xr.DataArray(
+                np.random.rand(10, 5, 5),
+                dims=["time", "lat", "lon"],
+                coords={
+                    "time": range(10),
+                    "lat": np.linspace(55, 65, 5),
+                    "lon": np.linspace(20, 30, 5),
+                },
+            )
+        }
+    )
     ds.to_netcdf(tmp_path / "osm_spatial_biomass.nc")
     ds.close()
 
