@@ -1,0 +1,38 @@
+[project]
+name = "osmose-python"
+version = "0.1.0"
+description = "Python orchestration layer and Shiny web interface for the OSMOSE marine ecosystem simulator"
+requires-python = ">=3.12"
+dependencies = [
+    "shiny>=1.3.0",
+    "shinyswatch>=0.7.0",
+    "pandas>=2.2",
+    "xarray>=2024.1",
+    "netCDF4>=1.6",
+    "plotly>=5.18",
+    "jinja2>=3.1",
+    "pymoo>=0.6",
+    "scikit-learn>=1.4",
+    "SALib>=1.5",
+    "numpy>=1.26",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=4.1",
+    "ruff>=0.3",
+]
+
+[tool.setuptools.packages.find]
+include = ["osmose*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
