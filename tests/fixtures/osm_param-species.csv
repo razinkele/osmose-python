@@ -1,0 +1,7 @@
+# Species parameters
+species.name.sp0 ; Anchovy
+species.linf.sp0 ; 19.5
+species.k.sp0 ; 0.364
+species.name.sp1 ; Sardine
+species.linf.sp1 ; 23.0
+species.k.sp1 ; 0.28

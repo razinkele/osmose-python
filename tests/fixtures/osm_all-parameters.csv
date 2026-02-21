@@ -1,0 +1,5 @@
+# Master configuration file
+simulation.time.ndtperyear ; 12
+simulation.time.nyear ; 50
+simulation.nspecies ; 2
+osmose.configuration.species ; osm_param-species.csv
