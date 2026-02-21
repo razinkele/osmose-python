@@ -1,0 +1,91 @@
+"""Grid OSMOSE parameter definitions."""
+
+from osmose.schema.base import OsmoseField, ParamType
+
+GRID_FIELDS: list[OsmoseField] = [
+    OsmoseField(
+        key_pattern="grid.java.classname",
+        param_type=ParamType.ENUM,
+        default="fr.ird.osmose.grid.OriginalGrid",
+        choices=["fr.ird.osmose.grid.OriginalGrid", "fr.ird.osmose.grid.NcGrid"],
+        description="Java class implementing the grid",
+        category="grid",
+    ),
+    OsmoseField(
+        key_pattern="grid.ncolumn",
+        param_type=ParamType.INT,
+        default=30,
+        min_val=1,
+        max_val=1000,
+        description="Number of columns",
+        category="grid",
+    ),
+    OsmoseField(
+        key_pattern="grid.nline",
+        param_type=ParamType.INT,
+        default=30,
+        min_val=1,
+        max_val=1000,
+        description="Number of rows",
+        category="grid",
+    ),
+    OsmoseField(
+        key_pattern="grid.upleft.lat",
+        param_type=ParamType.FLOAT,
+        description="Upper-left latitude",
+        category="grid",
+        unit="degrees",
+    ),
+    OsmoseField(
+        key_pattern="grid.upleft.lon",
+        param_type=ParamType.FLOAT,
+        description="Upper-left longitude",
+        category="grid",
+        unit="degrees",
+    ),
+    OsmoseField(
+        key_pattern="grid.lowright.lat",
+        param_type=ParamType.FLOAT,
+        description="Lower-right latitude",
+        category="grid",
+        unit="degrees",
+    ),
+    OsmoseField(
+        key_pattern="grid.lowright.lon",
+        param_type=ParamType.FLOAT,
+        description="Lower-right longitude",
+        category="grid",
+        unit="degrees",
+    ),
+    OsmoseField(
+        key_pattern="grid.netcdf.file",
+        param_type=ParamType.FILE_PATH,
+        description="Grid NetCDF file",
+        category="grid",
+        required=False,
+    ),
+    OsmoseField(
+        key_pattern="grid.var.lat",
+        param_type=ParamType.STRING,
+        default="latitude",
+        description="Latitude variable name in NetCDF file",
+        category="grid",
+        advanced=True,
+    ),
+    OsmoseField(
+        key_pattern="grid.var.lon",
+        param_type=ParamType.STRING,
+        default="longitude",
+        description="Longitude variable name in NetCDF file",
+        category="grid",
+        advanced=True,
+    ),
+    OsmoseField(
+        key_pattern="grid.var.mask",
+        param_type=ParamType.STRING,
+        default="mask",
+        description="Mask variable name in NetCDF file",
+        category="grid",
+        advanced=True,
+    ),
+]
