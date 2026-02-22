@@ -24,12 +24,8 @@ def scenarios_ui():
                 ui.output_ui("scenario_list"),
                 ui.hr(),
                 ui.layout_columns(
-                    ui.input_action_button(
-                        "btn_load_scenario", "Load", class_="btn-primary w-100"
-                    ),
-                    ui.input_action_button(
-                        "btn_fork_scenario", "Fork", class_="btn-info w-100"
-                    ),
+                    ui.input_action_button("btn_load_scenario", "Load", class_="btn-primary w-100"),
+                    ui.input_action_button("btn_fork_scenario", "Fork", class_="btn-info w-100"),
                     ui.input_action_button(
                         "btn_delete_scenario", "Delete", class_="btn-danger w-100"
                     ),

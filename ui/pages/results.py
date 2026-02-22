@@ -164,9 +164,7 @@ def results_server(input, output, session, state):
     def _load_results():
         out_dir = Path(input.output_dir())
         if not out_dir.is_dir():
-            ui.notification_show(
-                f"Directory not found: {out_dir}", type="error", duration=5
-            )
+            ui.notification_show(f"Directory not found: {out_dir}", type="error", duration=5)
             return
 
         res = OsmoseResults(out_dir)

@@ -13,11 +13,13 @@ from ui.pages.results import (
 
 
 def test_make_timeseries_chart_biomass():
-    df = pd.DataFrame({
-        "time": [0, 1, 2, 0, 1, 2],
-        "biomass": [100, 200, 300, 50, 100, 150],
-        "species": ["Anchovy", "Anchovy", "Anchovy", "Sardine", "Sardine", "Sardine"],
-    })
+    df = pd.DataFrame(
+        {
+            "time": [0, 1, 2, 0, 1, 2],
+            "biomass": [100, 200, 300, 50, 100, 150],
+            "species": ["Anchovy", "Anchovy", "Anchovy", "Sardine", "Sardine", "Sardine"],
+        }
+    )
     fig = make_timeseries_chart(df, "biomass", "Biomass")
     assert isinstance(fig, go.Figure)
     assert len(fig.data) == 2  # Two species traces
@@ -31,22 +33,26 @@ def test_make_timeseries_chart_empty():
 
 
 def test_make_timeseries_chart_with_species_filter():
-    df = pd.DataFrame({
-        "time": [0, 1, 0, 1],
-        "biomass": [100, 200, 50, 100],
-        "species": ["Anchovy", "Anchovy", "Sardine", "Sardine"],
-    })
+    df = pd.DataFrame(
+        {
+            "time": [0, 1, 0, 1],
+            "biomass": [100, 200, 50, 100],
+            "species": ["Anchovy", "Anchovy", "Sardine", "Sardine"],
+        }
+    )
     fig = make_timeseries_chart(df, "biomass", "Biomass", species="Anchovy")
     assert len(fig.data) == 1
 
 
 def test_make_diet_heatmap():
-    df = pd.DataFrame({
-        "time": [0, 0],
-        "species": ["Anchovy", "Anchovy"],
-        "prey_Sardine": [0.6, 0.5],
-        "prey_Plankton": [0.4, 0.5],
-    })
+    df = pd.DataFrame(
+        {
+            "time": [0, 0],
+            "species": ["Anchovy", "Anchovy"],
+            "prey_Sardine": [0.6, 0.5],
+            "prey_Plankton": [0.4, 0.5],
+        }
+    )
     fig = make_diet_heatmap(df)
     assert isinstance(fig, go.Figure)
 
@@ -58,28 +64,32 @@ def test_make_diet_heatmap_empty():
 
 
 def test_make_spatial_map():
-    ds = xr.Dataset({
-        "biomass": xr.DataArray(
-            np.random.rand(3, 5, 5),
-            dims=["time", "lat", "lon"],
-            coords={
-                "time": range(3),
-                "lat": np.linspace(43, 48, 5),
-                "lon": np.linspace(-5, 0, 5),
-            },
-        )
-    })
+    ds = xr.Dataset(
+        {
+            "biomass": xr.DataArray(
+                np.random.rand(3, 5, 5),
+                dims=["time", "lat", "lon"],
+                coords={
+                    "time": range(3),
+                    "lat": np.linspace(43, 48, 5),
+                    "lon": np.linspace(-5, 0, 5),
+                },
+            )
+        }
+    )
     fig = make_spatial_map(ds, "biomass", time_idx=0)
     assert isinstance(fig, go.Figure)
 
 
 def test_make_spatial_map_with_title():
-    ds = xr.Dataset({
-        "biomass": xr.DataArray(
-            np.random.rand(1, 3, 3),
-            dims=["time", "lat", "lon"],
-            coords={"time": [0], "lat": [43, 44, 45], "lon": [-3, -2, -1]},
-        )
-    })
+    ds = xr.Dataset(
+        {
+            "biomass": xr.DataArray(
+                np.random.rand(1, 3, 3),
+                dims=["time", "lat", "lon"],
+                coords={"time": [0], "lat": [43, 44, 45], "lon": [-3, -2, -1]},
+            )
+        }
+    )
     fig = make_spatial_map(ds, "biomass", time_idx=0, title="Biomass t=0")
     assert fig.layout.title.text == "Biomass t=0"

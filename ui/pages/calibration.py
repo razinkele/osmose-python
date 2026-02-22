@@ -28,13 +28,15 @@ def get_calibratable_params(registry: ParameterRegistry, n_species: int) -> list
             continue
         for i in range(n_species):
             key = field.resolve_key(i)
-            params.append({
-                "key": key,
-                "label": f"{field.description} (sp{i})",
-                "category": field.category,
-                "lower": field.min_val,
-                "upper": field.max_val,
-            })
+            params.append(
+                {
+                    "key": key,
+                    "label": f"{field.description} (sp{i})",
+                    "category": field.category,
+                    "lower": field.min_val,
+                    "upper": field.max_val,
+                }
+            )
     return params
 
 
@@ -94,24 +96,16 @@ def calibration_ui():
                     },
                 ),
                 ui.input_numeric("cal_pop_size", "Population size", value=50, min=10, max=500),
-                ui.input_numeric(
-                    "cal_generations", "Generations", value=100, min=10, max=1000
-                ),
-                ui.input_numeric(
-                    "cal_n_parallel", "Parallel workers", value=4, min=1, max=32
-                ),
+                ui.input_numeric("cal_generations", "Generations", value=100, min=10, max=1000),
+                ui.input_numeric("cal_n_parallel", "Parallel workers", value=4, min=1, max=32),
                 ui.hr(),
                 ui.h5("Free Parameters"),
                 ui.p("Select parameters to optimize:", style="color: #999; font-size: 13px;"),
                 ui.output_ui("free_param_selector"),
                 ui.hr(),
                 ui.h5("Objectives"),
-                ui.input_file(
-                    "observed_biomass", "Upload observed biomass CSV", accept=[".csv"]
-                ),
-                ui.input_file(
-                    "observed_diet", "Upload observed diet matrix CSV", accept=[".csv"]
-                ),
+                ui.input_file("observed_biomass", "Upload observed biomass CSV", accept=[".csv"]),
+                ui.input_file("observed_diet", "Upload observed diet matrix CSV", accept=[".csv"]),
                 ui.hr(),
                 ui.layout_columns(
                     ui.input_action_button(
@@ -203,8 +197,10 @@ def calibration_server(input, output, session, state):
     @render_plotly
     def sensitivity_chart():
         # Placeholder: no sensitivity result yet
-        return make_sensitivity_chart({
-            "param_names": ["(none)"],
-            "S1": np.array([0.0]),
-            "ST": np.array([0.0]),
-        })
+        return make_sensitivity_chart(
+            {
+                "param_names": ["(none)"],
+                "S1": np.array([0.0]),
+                "ST": np.array([0.0]),
+            }
+        )

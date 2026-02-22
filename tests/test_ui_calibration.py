@@ -13,6 +13,7 @@ from ui.pages.calibration import (
 
 def test_get_calibratable_params():
     from ui.state import REGISTRY
+
     params = get_calibratable_params(REGISTRY, n_species=3)
     assert len(params) > 0
     # Should include growth K for all 3 species
