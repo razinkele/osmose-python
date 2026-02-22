@@ -110,6 +110,24 @@ def test_read_csv_pattern(output_dir):
     assert len(csvs) == 2
 
 
+def test_mortality_returns_empty_when_no_files(output_dir):
+    results = OsmoseResults(output_dir)
+    df = results.mortality()
+    assert df.empty
+
+
+def test_mean_size_returns_empty_when_no_files(output_dir):
+    results = OsmoseResults(output_dir)
+    df = results.mean_size()
+    assert df.empty
+
+
+def test_mean_trophic_level_returns_empty_when_no_files(output_dir):
+    results = OsmoseResults(output_dir)
+    df = results.mean_trophic_level()
+    assert df.empty
+
+
 def test_close_clears_cache(output_dir):
     results = OsmoseResults(output_dir)
     results.read_netcdf("osm_spatial_biomass.nc")

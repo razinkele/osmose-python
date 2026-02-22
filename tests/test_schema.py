@@ -1,4 +1,5 @@
 # tests/test_schema.py
+import pytest
 from osmose.schema.base import OsmoseField, ParamType
 
 
@@ -62,6 +63,28 @@ def test_osmose_field_validate_enum():
     assert field.validate_value("fr.ird.osmose.grid.OriginalGrid") == []
     errors = field.validate_value("InvalidGrid")
     assert len(errors) == 1
+
+
+def test_resolve_key_indexed_without_idx_raises():
+    field = OsmoseField(
+        key_pattern="species.linf.sp{idx}",
+        param_type=ParamType.FLOAT,
+        indexed=True,
+    )
+    with pytest.raises(ValueError, match="Index required"):
+        field.resolve_key()
+
+
+def test_validate_value_below_min():
+    field = OsmoseField(
+        key_pattern="species.k.sp{idx}",
+        param_type=ParamType.FLOAT,
+        min_val=0.01,
+        max_val=2.0,
+    )
+    errors = field.validate_value(-0.5)
+    assert len(errors) == 1
+    assert "min" in errors[0].lower()
 
 
 def test_param_type_enum():

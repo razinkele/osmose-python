@@ -1,7 +1,12 @@
 import numpy as np
 import pandas as pd
 import pytest
-from osmose.calibration.objectives import biomass_rmse, diet_distance, normalized_rmse
+from osmose.calibration.objectives import (
+    abundance_rmse,
+    biomass_rmse,
+    diet_distance,
+    normalized_rmse,
+)
 
 
 def test_biomass_rmse_identical():
@@ -40,9 +45,45 @@ def test_diet_distance_different():
     assert result == pytest.approx(np.sqrt(2.0))
 
 
+def test_abundance_rmse_identical():
+    df = pd.DataFrame({"time": range(5), "abundance": [500.0] * 5})
+    assert abundance_rmse(df, df) == 0.0
+
+
+def test_abundance_rmse_different():
+    sim = pd.DataFrame({"time": range(5), "abundance": [500.0] * 5})
+    obs = pd.DataFrame({"time": range(5), "abundance": [520.0] * 5})
+    assert abundance_rmse(sim, obs) == pytest.approx(20.0)
+
+
+def test_abundance_rmse_with_species_filter():
+    sim = pd.DataFrame({"time": [0, 0], "abundance": [100, 200], "species": ["A", "B"]})
+    obs = pd.DataFrame({"time": [0, 0], "abundance": [110, 200], "species": ["A", "B"]})
+    assert abundance_rmse(sim, obs, species="A") == pytest.approx(10.0)
+    assert abundance_rmse(sim, obs, species="B") == pytest.approx(0.0)
+
+
+def test_abundance_rmse_no_overlap():
+    sim = pd.DataFrame({"time": [0, 1], "abundance": [100, 200]})
+    obs = pd.DataFrame({"time": [5, 6], "abundance": [100, 200]})
+    assert abundance_rmse(sim, obs) == float("inf")
+
+
+def test_diet_distance_shape_mismatch():
+    sim = pd.DataFrame({"prey1": [0.5, 0.3], "prey2": [0.5, 0.7]})
+    obs = pd.DataFrame({"prey1": [0.5]})
+    assert diet_distance(sim, obs) == float("inf")
+
+
 def test_normalized_rmse():
     sim = np.array([100, 110, 90])
     obs = np.array([100, 100, 100])
     result = normalized_rmse(sim, obs)
     expected = np.sqrt(np.mean([0, 100, 100])) / 100
     assert result == pytest.approx(expected)
+
+
+def test_normalized_rmse_zero_mean():
+    sim = np.array([1.0, 2.0])
+    obs = np.array([0.0, 0.0])
+    assert normalized_rmse(sim, obs) == float("inf")

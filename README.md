@@ -58,17 +58,20 @@ ui/                      Shiny web interface
   theme.py               Shinyswatch superhero theme
 data/
   examples/              Bay of Biscay example config (3 species)
-tests/                   132 tests
+tests/                   155 tests, 100% coverage
 ```
 
 ## Testing
 
 ```bash
-pytest                   # run all tests
-pytest -v -k test_name   # run specific test
-ruff check .             # lint
-ruff format .            # format
+pytest                          # run all tests
+pytest --cov=osmose             # run with coverage report
+pytest -v -k test_name          # run specific test
+ruff check osmose/ ui/ tests/   # lint
+ruff format osmose/ ui/ tests/  # format
 ```
+
+155 tests with 100% code coverage. CI runs lint and test on every push via GitHub Actions.
 
 ## Tech Stack
 

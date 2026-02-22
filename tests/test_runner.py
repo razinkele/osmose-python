@@ -200,3 +200,29 @@ def test_build_cmd_minimal() -> None:
     runner = OsmoseRunner(jar_path=Path("/path/to/osmose.jar"))
     cmd = runner._build_cmd(config_path=Path("/data/config.csv"))
     assert cmd == ["java", "-jar", "/path/to/osmose.jar", "/data/config.csv"]
+
+
+def test_get_java_version_not_found() -> None:
+    """get_java_version returns None when the command doesn't exist."""
+    result = OsmoseRunner.get_java_version(java_cmd="/nonexistent/java_binary_xyz")
+    assert result is None
+
+
+async def test_run_handles_none_stream(fake_config: Path, tmp_path: Path) -> None:
+    """run() handles a process whose stdout is None without crashing."""
+    from unittest.mock import AsyncMock, MagicMock, patch
+
+    mock_process = MagicMock()
+    mock_process.stdout = None  # triggers the `if stream is None: return` guard
+    mock_process.stderr = None
+    mock_process.returncode = 0
+    mock_process.wait = AsyncMock(return_value=0)
+
+    runner = OsmoseRunner(jar_path=tmp_path / "fake.jar")
+
+    with patch("asyncio.create_subprocess_exec", AsyncMock(return_value=mock_process)):
+        result = await runner.run(config_path=fake_config)
+
+    assert result.returncode == 0
+    assert result.stdout == ""
+    assert result.stderr == ""

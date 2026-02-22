@@ -43,6 +43,12 @@ def test_find_optimum():
     assert abs(result["params"][0] - 5.0) < 1.0  # Should be near 5
 
 
+def test_find_optimum_before_fit_raises():
+    cal = SurrogateCalibrator(param_bounds=[(0, 1)])
+    with pytest.raises(RuntimeError, match="fit"):
+        cal.find_optimum()
+
+
 def test_multi_objective_fit():
     cal = SurrogateCalibrator(param_bounds=[(0, 10)], n_objectives=2)
     X = np.linspace(0, 10, 30).reshape(-1, 1)
@@ -50,3 +56,16 @@ def test_multi_objective_fit():
     cal.fit(X, y)
     means, stds = cal.predict(np.array([[5.0]]))
     assert means.shape == (1, 2)
+
+
+def test_multi_objective_find_optimum():
+    cal = SurrogateCalibrator(param_bounds=[(0, 10)], n_objectives=2)
+    X = np.linspace(0, 10, 50).reshape(-1, 1)
+    # Both objectives minimize near x=5
+    y = np.column_stack([(X.ravel() - 5) ** 2, (X.ravel() - 5) ** 2])
+    cal.fit(X, y)
+    result = cal.find_optimum(n_candidates=1000)
+    assert "params" in result
+    assert result["predicted_objectives"].shape == (2,)
+    assert result["predicted_uncertainty"].shape == (2,)
+    assert abs(result["params"][0] - 5.0) < 1.5
