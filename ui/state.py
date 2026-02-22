@@ -1,0 +1,82 @@
+"""Shared reactive application state for all UI pages."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from shiny import reactive
+
+from osmose.runner import RunResult
+from osmose.schema.bioenergetics import BIOENERGETICS_FIELDS
+from osmose.schema.economics import ECONOMICS_FIELDS
+from osmose.schema.fishing import FISHING_FIELDS
+from osmose.schema.grid import GRID_FIELDS
+from osmose.schema.ltl import LTL_FIELDS
+from osmose.schema.movement import MOVEMENT_FIELDS
+from osmose.schema.output import OUTPUT_FIELDS
+from osmose.schema.predation import PREDATION_FIELDS
+from osmose.schema.registry import ParameterRegistry
+from osmose.schema.simulation import SIMULATION_FIELDS
+from osmose.schema.species import SPECIES_FIELDS
+
+
+def _build_registry() -> ParameterRegistry:
+    """Build the full parameter registry (cached at module level)."""
+    reg = ParameterRegistry()
+    for fields in [
+        SIMULATION_FIELDS,
+        SPECIES_FIELDS,
+        GRID_FIELDS,
+        PREDATION_FIELDS,
+        FISHING_FIELDS,
+        MOVEMENT_FIELDS,
+        LTL_FIELDS,
+        OUTPUT_FIELDS,
+        BIOENERGETICS_FIELDS,
+        ECONOMICS_FIELDS,
+    ]:
+        for f in fields:
+            reg.register(f)
+    return reg
+
+
+REGISTRY = _build_registry()
+
+
+class AppState:
+    """Shared reactive state passed to all page server functions.
+
+    Holds the current OSMOSE config, last run result, and output directory.
+    All pages read/write through this single source of truth.
+    """
+
+    def __init__(self, scenarios_dir: Path = Path("data/scenarios")):
+        self.config: reactive.Value[dict[str, str]] = reactive.Value({})
+        self.output_dir: reactive.Value[Path | None] = reactive.Value(None)
+        self.run_result: reactive.Value[RunResult | None] = reactive.Value(None)
+        self.scenarios_dir: Path = scenarios_dir
+        self.registry = REGISTRY
+
+    def update_config(self, key: str, value: str) -> None:
+        """Update a single key in the config dict."""
+        cfg = dict(self.config.get())
+        cfg[key] = value
+        self.config.set(cfg)
+
+    def reset_to_defaults(self) -> None:
+        """Reset config to default values from the schema registry.
+
+        This replaces the entire config — any user edits are discarded.
+        """
+        nspecies_field = self.registry.get_field("simulation.nspecies")
+        n_species = int(nspecies_field.default) if nspecies_field and nspecies_field.default else 3
+        cfg: dict[str, str] = {}
+        for field in self.registry.all_fields():
+            if field.default is not None:
+                if field.indexed:
+                    for i in range(n_species):
+                        key = field.resolve_key(i)
+                        cfg[key] = str(field.default)
+                else:
+                    cfg[field.key_pattern] = str(field.default)
+        self.config.set(cfg)
