@@ -1,6 +1,92 @@
 """Results visualization page."""
 
-from shiny import ui, render
+from __future__ import annotations
+
+from pathlib import Path
+
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import xarray as xr
+from shiny import reactive, ui
+from shinywidgets import output_widget, render_plotly
+
+from osmose.results import OsmoseResults
+
+
+# ---------------------------------------------------------------------------
+# Pure chart-generation functions (testable without Shiny)
+# ---------------------------------------------------------------------------
+
+
+def make_timeseries_chart(
+    df: pd.DataFrame,
+    value_col: str,
+    title: str,
+    species: str | None = None,
+) -> go.Figure:
+    """Create a time series line chart from OSMOSE output."""
+    if df.empty:
+        return go.Figure().update_layout(title=title)
+    if species and "species" in df.columns:
+        df = df[df["species"] == species]
+    if df.empty:
+        return go.Figure().update_layout(title=title)
+    fig = px.line(df, x="time", y=value_col, color="species", title=title)
+    fig.update_layout(template="plotly_dark")
+    return fig
+
+
+def make_diet_heatmap(df: pd.DataFrame) -> go.Figure:
+    """Create a diet composition heatmap."""
+    if df.empty:
+        return go.Figure().update_layout(title="Diet Composition")
+    prey_cols = [c for c in df.columns if c.startswith("prey_")]
+    if not prey_cols:
+        return go.Figure().update_layout(title="Diet Composition (no prey data)")
+    if "species" in df.columns:
+        matrix = df.groupby("species")[prey_cols].mean()
+    else:
+        matrix = df[prey_cols].mean().to_frame().T
+    prey_names = [c.replace("prey_", "") for c in prey_cols]
+    fig = px.imshow(
+        matrix.values,
+        x=prey_names,
+        y=list(matrix.index),
+        title="Diet Composition",
+        color_continuous_scale="YlOrRd",
+        labels={"x": "Prey", "y": "Predator", "color": "Proportion"},
+    )
+    fig.update_layout(template="plotly_dark")
+    return fig
+
+
+def make_spatial_map(
+    ds: xr.Dataset,
+    var_name: str,
+    time_idx: int = 0,
+    title: str | None = None,
+) -> go.Figure:
+    """Create a spatial heatmap from NetCDF data."""
+    data = ds[var_name].isel(time=time_idx).values
+    lat = ds["lat"].values
+    lon = ds["lon"].values
+    fig = px.imshow(
+        data,
+        x=lon,
+        y=lat,
+        origin="lower",
+        color_continuous_scale="Viridis",
+        labels={"x": "Longitude", "y": "Latitude", "color": var_name},
+        title=title or f"{var_name} (t={time_idx})",
+    )
+    fig.update_layout(template="plotly_dark")
+    return fig
+
+
+# ---------------------------------------------------------------------------
+# Shiny UI
+# ---------------------------------------------------------------------------
 
 
 def results_ui():
@@ -34,48 +120,155 @@ def results_ui():
                     selected="biomass",
                 ),
             ),
-            # Main: Visualization
+            # Main: Time Series visualization
             ui.card(
                 ui.card_header("Time Series"),
-                ui.output_ui("results_plot_placeholder"),
+                output_widget("results_chart"),
             ),
             col_widths=[3, 9],
         ),
         ui.layout_columns(
             ui.card(
                 ui.card_header("Diet Composition Matrix"),
-                ui.output_ui("diet_placeholder"),
+                output_widget("diet_chart"),
             ),
             ui.card(
                 ui.card_header("Spatial Distribution"),
-                ui.output_ui("spatial_placeholder"),
+                ui.input_slider(
+                    "spatial_time_idx",
+                    "Time step",
+                    min=0,
+                    max=1,
+                    value=0,
+                    step=1,
+                ),
+                output_widget("spatial_chart"),
             ),
             col_widths=[6, 6],
         ),
     )
 
 
+# ---------------------------------------------------------------------------
+# Shiny Server
+# ---------------------------------------------------------------------------
+
+
 def results_server(input, output, session, state):
-    @render.ui
-    def results_plot_placeholder():
-        return ui.div(
-            "Load results to view time series plots.",
-            style="height: 350px; display: flex; align-items: center; justify-content: center; "
-            "border: 1px dashed #4e5d6c; border-radius: 8px; color: #999;",
-        )
+    results_obj: reactive.Value[OsmoseResults | None] = reactive.Value(None)
+    results_data: reactive.Value[dict[str, pd.DataFrame]] = reactive.Value({})
+    spatial_ds: reactive.Value[xr.Dataset | None] = reactive.Value(None)
 
-    @render.ui
-    def diet_placeholder():
-        return ui.div(
-            "Diet composition heatmap will appear here.",
-            style="height: 300px; display: flex; align-items: center; justify-content: center; "
-            "border: 1px dashed #4e5d6c; border-radius: 8px; color: #999;",
-        )
+    @reactive.effect
+    @reactive.event(input.btn_load_results)
+    def _load_results():
+        out_dir = Path(input.output_dir())
+        if not out_dir.is_dir():
+            ui.notification_show(
+                f"Directory not found: {out_dir}", type="error", duration=5
+            )
+            return
 
-    @render.ui
-    def spatial_placeholder():
-        return ui.div(
-            "Spatial biomass maps will appear here.",
-            style="height: 300px; display: flex; align-items: center; justify-content: center; "
-            "border: 1px dashed #4e5d6c; border-radius: 8px; color: #999;",
-        )
+        res = OsmoseResults(out_dir)
+        results_obj.set(res)
+
+        # Load all output types
+        data: dict[str, pd.DataFrame] = {}
+        data["biomass"] = res.biomass()
+        data["abundance"] = res.abundance()
+        data["yield"] = res.yield_biomass()
+        data["mortality"] = res.mortality()
+        data["diet"] = res.diet_matrix()
+        data["trophic"] = res.mean_trophic_level()
+        results_data.set(data)
+
+        # Update output dir in shared state
+        if state is not None:
+            state.output_dir.set(out_dir)
+
+        # Discover species from biomass data and update dropdown
+        species_choices: dict[str, str] = {"all": "All species"}
+        bio_df = data.get("biomass", pd.DataFrame())
+        if not bio_df.empty and "species" in bio_df.columns:
+            for sp in sorted(bio_df["species"].unique()):
+                species_choices[sp] = sp
+        ui.update_select("result_species", choices=species_choices)
+
+        # Look for NetCDF files for spatial data
+        nc_files = [f for f in res.list_outputs() if f.endswith(".nc")]
+        if nc_files:
+            spatial_ds.set(res.read_netcdf(nc_files[0]))
+            max_t = spatial_ds.get().sizes.get("time", 1) - 1
+            ui.update_slider("spatial_time_idx", max=max(max_t, 0))
+
+        ui.notification_show("Results loaded successfully.", type="message", duration=3)
+
+    @render_plotly
+    def results_chart():
+        data = results_data.get()
+        rtype = input.result_type()
+        species_filter = input.result_species()
+
+        # Map result types to their value column names
+        col_map = {
+            "biomass": "biomass",
+            "abundance": "abundance",
+            "yield": "yield",
+            "mortality": "mortality",
+            "trophic": "meanTL",
+        }
+        title_map = {
+            "biomass": "Biomass",
+            "abundance": "Abundance",
+            "yield": "Yield (Catch)",
+            "mortality": "Mortality",
+            "trophic": "Mean Trophic Level",
+        }
+
+        # If diet is selected, show a placeholder message in time series
+        if rtype == "diet":
+            return go.Figure().update_layout(
+                title="Diet data shown in heatmap below",
+                template="plotly_dark",
+            )
+
+        df = data.get(rtype, pd.DataFrame())
+        value_col = col_map.get(rtype, rtype)
+        title = title_map.get(rtype, rtype.title())
+        sp = species_filter if species_filter != "all" else None
+
+        # If the expected value column doesn't exist, try first numeric column
+        if not df.empty and value_col not in df.columns:
+            numeric_cols = df.select_dtypes(include="number").columns
+            non_time = [c for c in numeric_cols if c != "time"]
+            if non_time:
+                value_col = non_time[0]
+
+        return make_timeseries_chart(df, value_col, title, species=sp)
+
+    @render_plotly
+    def diet_chart():
+        data = results_data.get()
+        df = data.get("diet", pd.DataFrame())
+        return make_diet_heatmap(df)
+
+    @render_plotly
+    def spatial_chart():
+        ds = spatial_ds.get()
+        if ds is None:
+            return go.Figure().update_layout(
+                title="No spatial data loaded",
+                template="plotly_dark",
+            )
+        time_idx = input.spatial_time_idx()
+        # Find a suitable variable (prefer 'biomass')
+        var_names = [v for v in ds.data_vars if "lat" in ds[v].dims and "lon" in ds[v].dims]
+        if not var_names:
+            return go.Figure().update_layout(
+                title="No spatial variables found",
+                template="plotly_dark",
+            )
+        var_name = "biomass" if "biomass" in var_names else var_names[0]
+        max_t = ds.sizes.get("time", 1) - 1
+        safe_idx = min(time_idx, max_t)
+        return make_spatial_map(ds, var_name, time_idx=safe_idx)
