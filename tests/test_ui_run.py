@@ -1,0 +1,36 @@
+"""Tests for run page logic -- config writing, override parsing, status flow."""
+
+from ui.pages.run import parse_overrides, write_temp_config
+
+
+def test_parse_overrides_empty():
+    assert parse_overrides("") == {}
+
+
+def test_parse_overrides_single():
+    assert parse_overrides("simulation.nspecies=5") == {"simulation.nspecies": "5"}
+
+
+def test_parse_overrides_multiple():
+    text = "simulation.nspecies=5\nspecies.k.sp0=0.3"
+    result = parse_overrides(text)
+    assert result == {"simulation.nspecies": "5", "species.k.sp0": "0.3"}
+
+
+def test_parse_overrides_skips_blank_lines():
+    text = "a=1\n\nb=2\n"
+    assert parse_overrides(text) == {"a": "1", "b": "2"}
+
+
+def test_parse_overrides_strips_whitespace():
+    text = "  a = 1  \n  b=2"
+    assert parse_overrides(text) == {"a": "1", "b": "2"}
+
+
+def test_write_temp_config(tmp_path):
+    config = {"simulation.nspecies": "3", "species.k.sp0": "0.2"}
+    config_path = write_temp_config(config, tmp_path)
+    assert config_path.exists()
+    assert config_path.name == "osm_all-parameters.csv"
+    content = config_path.read_text()
+    assert "simulation.nspecies" in content
