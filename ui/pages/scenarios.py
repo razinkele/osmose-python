@@ -1,6 +1,8 @@
 """Scenario management page."""
 
-from shiny import ui, render
+from shiny import reactive, render, ui
+
+from osmose.scenarios import Scenario, ScenarioManager
 
 
 def scenarios_ui():
@@ -22,8 +24,12 @@ def scenarios_ui():
                 ui.output_ui("scenario_list"),
                 ui.hr(),
                 ui.layout_columns(
-                    ui.input_action_button("btn_load_scenario", "Load", class_="btn-primary w-100"),
-                    ui.input_action_button("btn_fork_scenario", "Fork", class_="btn-info w-100"),
+                    ui.input_action_button(
+                        "btn_load_scenario", "Load", class_="btn-primary w-100"
+                    ),
+                    ui.input_action_button(
+                        "btn_fork_scenario", "Fork", class_="btn-info w-100"
+                    ),
                     ui.input_action_button(
                         "btn_delete_scenario", "Delete", class_="btn-danger w-100"
                     ),
@@ -45,16 +51,135 @@ def scenarios_ui():
 
 
 def scenarios_server(input, output, session, state):
+    mgr = ScenarioManager(state.scenarios_dir)
+    refresh_trigger = reactive.value(0)
+
+    def _bump():
+        """Increment the refresh trigger to force re-render of scenario list."""
+        refresh_trigger.set(refresh_trigger.get() + 1)
+
+    def _scenario_names() -> list[str]:
+        """Return a sorted list of scenario names."""
+        return [s["name"] for s in mgr.list_scenarios()]
+
+    # --- Scenario list (radio buttons) ---
+
     @render.ui
     def scenario_list():
-        return ui.div(
-            "No scenarios saved yet.",
-            style="padding: 20px; text-align: center; color: #999;",
+        refresh_trigger.get()  # depend on trigger
+        scenarios = mgr.list_scenarios()
+        if not scenarios:
+            return ui.div(
+                "No scenarios saved yet.",
+                style="padding: 20px; text-align: center; color: #999;",
+            )
+        choices = {s["name"]: f"{s['name']}  ({s.get('description', '')})" for s in scenarios}
+        return ui.input_radio_buttons("selected_scenario", None, choices=choices)
+
+    # --- Save ---
+
+    @reactive.effect
+    @reactive.event(input.btn_save_scenario)
+    def handle_save():
+        name = input.scenario_name().strip()
+        if not name:
+            return
+        tags_raw = input.scenario_tags().strip()
+        tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
+        scenario = Scenario(
+            name=name,
+            description=input.scenario_desc().strip(),
+            config=dict(state.config.get()),
+            tags=tags,
         )
+        mgr.save(scenario)
+        _bump()
+
+    # --- Load ---
+
+    @reactive.effect
+    @reactive.event(input.btn_load_scenario)
+    def handle_load():
+        selected = input.selected_scenario()
+        if not selected:
+            return
+        loaded = mgr.load(selected)
+        state.config.set(loaded.config)
+
+    # --- Fork ---
+
+    @reactive.effect
+    @reactive.event(input.btn_fork_scenario)
+    def handle_fork():
+        selected = input.selected_scenario()
+        if not selected:
+            return
+        new_name = f"{selected}_fork"
+        mgr.fork(selected, new_name)
+        _bump()
+
+    # --- Delete ---
+
+    @reactive.effect
+    @reactive.event(input.btn_delete_scenario)
+    def handle_delete():
+        selected = input.selected_scenario()
+        if not selected:
+            return
+        mgr.delete(selected)
+        _bump()
+
+    # --- Update compare dropdowns when scenario list changes ---
+
+    @reactive.effect
+    def update_compare_choices():
+        refresh_trigger.get()  # depend on trigger
+        names = _scenario_names()
+        choices = {n: n for n in names}
+        ui.update_select("compare_a", choices=choices, session=session)
+        ui.update_select("compare_b", choices=choices, session=session)
+
+    # --- Compare ---
+
+    compare_diffs = reactive.value([])
+
+    @reactive.effect
+    @reactive.event(input.btn_compare)
+    def handle_compare():
+        a = input.compare_a()
+        b = input.compare_b()
+        if not a or not b or a == b:
+            compare_diffs.set([])
+            return
+        diffs = mgr.compare(a, b)
+        compare_diffs.set(diffs)
 
     @render.ui
     def compare_results():
-        return ui.div(
-            "Select two scenarios and click Compare.",
-            style="padding: 20px; text-align: center; color: #999;",
+        diffs = compare_diffs.get()
+        if not diffs:
+            return ui.div(
+                "Select two scenarios and click Compare.",
+                style="padding: 20px; text-align: center; color: #999;",
+            )
+        rows = []
+        for d in diffs:
+            rows.append(
+                ui.tags.tr(
+                    ui.tags.td(d.key, style="font-weight: bold;"),
+                    ui.tags.td(str(d.value_a) if d.value_a is not None else "(missing)"),
+                    ui.tags.td(str(d.value_b) if d.value_b is not None else "(missing)"),
+                    style="background: rgba(255, 165, 0, 0.15);",
+                )
+            )
+        return ui.tags.table(
+            ui.tags.thead(
+                ui.tags.tr(
+                    ui.tags.th("Parameter"),
+                    ui.tags.th("Value A"),
+                    ui.tags.th("Value B"),
+                )
+            ),
+            ui.tags.tbody(*rows),
+            class_="table table-sm table-bordered",
         )
