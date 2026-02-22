@@ -2,6 +2,7 @@
 
 from shiny import App, ui
 from ui.theme import THEME
+from ui.state import AppState
 
 from ui.pages.setup import setup_ui, setup_server
 from ui.pages.grid import grid_ui, grid_server
@@ -31,16 +32,19 @@ app_ui = ui.page_navbar(
 
 
 def server(input, output, session):
-    setup_server(input, output, session)
-    grid_server(input, output, session)
-    forcing_server(input, output, session)
-    fishing_server(input, output, session)
-    movement_server(input, output, session)
-    run_server(input, output, session)
-    results_server(input, output, session)
-    calibration_server(input, output, session)
-    scenarios_server(input, output, session)
-    advanced_server(input, output, session)
+    state = AppState()
+    state.reset_to_defaults()
+
+    setup_server(input, output, session, state)
+    grid_server(input, output, session, state)
+    forcing_server(input, output, session, state)
+    fishing_server(input, output, session, state)
+    movement_server(input, output, session, state)
+    run_server(input, output, session, state)
+    results_server(input, output, session, state)
+    calibration_server(input, output, session, state)
+    scenarios_server(input, output, session, state)
+    advanced_server(input, output, session, state)
 
 
 app = App(app_ui, server)

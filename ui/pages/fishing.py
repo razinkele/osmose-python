@@ -27,7 +27,7 @@ def fishing_ui():
     )
 
 
-def fishing_server(input, output, session):
+def fishing_server(input, output, session, state):
     @render.ui
     def fishery_panels():
         n = input.n_fisheries()

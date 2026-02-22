@@ -44,7 +44,7 @@ def grid_ui():
     )
 
 
-def grid_server(input, output, session):
+def grid_server(input, output, session, state):
     @render.ui
     def grid_preview_placeholder():
         return ui.div(

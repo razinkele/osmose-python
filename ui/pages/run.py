@@ -40,7 +40,7 @@ def run_ui():
     )
 
 
-def run_server(input, output, session):
+def run_server(input, output, session, state):
     run_log = reactive.value([])
     status = reactive.value("Idle")
 

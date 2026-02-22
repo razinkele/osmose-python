@@ -27,7 +27,7 @@ def movement_ui():
     )
 
 
-def movement_server(input, output, session):
+def movement_server(input, output, session, state):
     @render.ui
     def species_movement_panels():
         per_species = [f for f in MOVEMENT_FIELDS if f.indexed and "map" not in f.key_pattern]

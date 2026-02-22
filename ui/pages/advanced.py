@@ -69,7 +69,7 @@ def advanced_ui():
     )
 
 
-def advanced_server(input, output, session):
+def advanced_server(input, output, session, state):
     registry = _build_registry()
 
     @render.ui

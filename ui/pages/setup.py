@@ -28,7 +28,7 @@ def setup_ui():
     )
 
 
-def setup_server(input, output, session):
+def setup_server(input, output, session, state):
     @render.ui
     def species_panels():
         n = input.n_species()

@@ -55,7 +55,7 @@ def results_ui():
     )
 
 
-def results_server(input, output, session):
+def results_server(input, output, session, state):
     @render.ui
     def results_plot_placeholder():
         return ui.div(

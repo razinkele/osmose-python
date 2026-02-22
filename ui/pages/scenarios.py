@@ -44,7 +44,7 @@ def scenarios_ui():
     )
 
 
-def scenarios_server(input, output, session):
+def scenarios_server(input, output, session, state):
     @render.ui
     def scenario_list():
         return ui.div(

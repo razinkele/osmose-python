@@ -74,7 +74,7 @@ def calibration_ui():
     )
 
 
-def calibration_server(input, output, session):
+def calibration_server(input, output, session, state):
     @render.text
     def cal_status():
         return "Ready. Configure parameters and objectives, then click Start."

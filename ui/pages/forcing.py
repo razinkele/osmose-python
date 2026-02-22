@@ -39,7 +39,7 @@ def forcing_ui():
     )
 
 
-def forcing_server(input, output, session):
+def forcing_server(input, output, session, state):
     @render.ui
     def resource_panels():
         n = input.n_resources()
