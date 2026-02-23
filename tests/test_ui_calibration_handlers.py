@@ -55,3 +55,70 @@ def test_build_free_params():
     assert free_params[0].key == "species.k.sp0"
     assert free_params[0].lower_bound == 0.1
     assert free_params[0].upper_bound == 1.0
+
+
+def test_run_surrogate_workflow():
+    """Test SurrogateCalibrator end-to-end: generate samples, fit, predict, find_optimum."""
+    import numpy as np
+
+    from osmose.calibration.surrogate import SurrogateCalibrator
+
+    # Two free params, 1 objective
+    bounds = [(0.1, 1.0), (10.0, 100.0)]
+    cal = SurrogateCalibrator(param_bounds=bounds, n_objectives=1)
+
+    # Step 1: generate samples
+    n_samples = 20
+    samples = cal.generate_samples(n_samples=n_samples)
+    assert samples.shape == (n_samples, 2)
+    # All samples within bounds
+    assert np.all(samples[:, 0] >= 0.1) and np.all(samples[:, 0] <= 1.0)
+    assert np.all(samples[:, 1] >= 10.0) and np.all(samples[:, 1] <= 100.0)
+
+    # Step 2: simulate OSMOSE evaluations (use a known function)
+    Y = np.sum(samples**2, axis=1)  # simple quadratic
+
+    # Step 3: fit GP model
+    cal.fit(samples, Y)
+    assert cal._is_fitted
+
+    # Step 4: predict on new points
+    test_X = cal.generate_samples(n_samples=5, seed=99)
+    means, stds = cal.predict(test_X)
+    assert means.shape == (5, 1)
+    assert stds.shape == (5, 1)
+    assert np.all(stds >= 0)
+
+    # Step 5: find optimum
+    result = cal.find_optimum(n_candidates=500)
+    assert "params" in result
+    assert "predicted_objectives" in result
+    assert "predicted_uncertainty" in result
+    assert result["params"].shape == (2,)
+
+
+def test_run_surrogate_workflow_multi_objective():
+    """Test SurrogateCalibrator with multiple objectives."""
+    import numpy as np
+
+    from osmose.calibration.surrogate import SurrogateCalibrator
+
+    bounds = [(0.0, 5.0), (0.0, 5.0)]
+    cal = SurrogateCalibrator(param_bounds=bounds, n_objectives=2)
+
+    samples = cal.generate_samples(n_samples=30)
+    Y = np.column_stack(
+        [
+            np.sum(samples**2, axis=1),
+            np.sum((samples - 3) ** 2, axis=1),
+        ]
+    )
+
+    cal.fit(samples, Y)
+    assert cal.n_objectives == 2
+
+    means, stds = cal.predict(samples[:5])
+    assert means.shape == (5, 2)
+
+    result = cal.find_optimum(n_candidates=500)
+    assert result["predicted_objectives"].shape == (2,)

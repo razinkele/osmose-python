@@ -17,6 +17,7 @@ from shinywidgets import output_widget, render_plotly
 from osmose.calibration.objectives import biomass_rmse, diet_distance
 from osmose.calibration.problem import FreeParameter, OsmoseCalibrationProblem
 from osmose.calibration.sensitivity import SensitivityAnalyzer
+from osmose.calibration.surrogate import SurrogateCalibrator
 from osmose.config.writer import OsmoseConfigWriter
 from osmose.schema.base import ParamType
 from osmose.schema.registry import ParameterRegistry
@@ -196,9 +197,13 @@ def calibration_server(input, output, session, state):
     sensitivity_result = reactive.value(None)
     cal_thread = reactive.value(None)
     cancel_flag = reactive.value(False)
+    surrogate_status = reactive.value("")
 
     @render.text
     def cal_status():
+        surr = surrogate_status.get()
+        if surr:
+            return surr
         hist = cal_history.get()
         if not hist:
             return "Ready. Configure parameters and objectives, then click Start."
@@ -268,37 +273,95 @@ def calibration_server(input, output, session, state):
         cal_history.set([])
         cal_F.set(None)
         cal_X.set(None)
+        surrogate_status.set("")
 
-        def run_optimization():
-            from pymoo.algorithms.moo.nsga2 import NSGA2
-            from pymoo.optimize import minimize
-            from pymoo.termination import get_termination
+        algorithm_choice = input.cal_algorithm()
+        pop_size = int(input.cal_pop_size())
+        generations = int(input.cal_generations())
 
-            algorithm = NSGA2(pop_size=int(input.cal_pop_size()))
-            termination = get_termination("n_gen", int(input.cal_generations()))
+        if algorithm_choice == "surrogate":
 
-            res = minimize(
-                problem,
-                algorithm,
-                termination,
-                seed=42,
-                verbose=False,
-            )
+            def run_surrogate():
+                bounds = [(fp.lower_bound, fp.upper_bound) for fp in free_params]
+                n_obj = len(objective_fns)
+                calibrator = SurrogateCalibrator(param_bounds=bounds, n_objectives=n_obj)
 
-            if res.F is not None:
-                cal_F.set(res.F)
-                cal_X.set(res.X)
-                if hasattr(res, "history") and res.history:
-                    history = [
-                        float(np.min(gen.opt.get("F").sum(axis=1)))
-                        for gen in res.history
-                        if gen.opt is not None
-                    ]
-                    cal_history.set(history)
+                n_samples = pop_size
+                surrogate_status.set(f"Generating {n_samples} Latin hypercube samples...")
+                samples = calibrator.generate_samples(n_samples=n_samples)
 
-        thread = threading.Thread(target=run_optimization, daemon=True)
-        thread.start()
-        cal_thread.set(thread)
+                # Evaluate OSMOSE for each sample
+                Y = np.zeros((n_samples, n_obj))
+                for idx in range(n_samples):
+                    if cancel_flag.get():
+                        surrogate_status.set("Cancelled.")
+                        return
+
+                    surrogate_status.set(f"Evaluating sample {idx + 1}/{n_samples}...")
+                    overrides = {fp.key: str(samples[idx, j]) for j, fp in enumerate(free_params)}
+                    try:
+                        result = problem._run_single(overrides, run_id=idx)
+                        for k in range(n_obj):
+                            Y[idx, k] = result[k]
+                    except Exception as exc:
+                        Y[idx, :] = float("inf")
+                        surrogate_status.set(f"Sample {idx + 1}/{n_samples} failed: {exc}")
+
+                if cancel_flag.get():
+                    surrogate_status.set("Cancelled.")
+                    return
+
+                surrogate_status.set("Fitting GP model...")
+                calibrator.fit(samples, Y)
+
+                surrogate_status.set("Finding optimum on surrogate...")
+                optimum = calibrator.find_optimum()
+
+                # Set results for the UI
+                cal_X.set(samples)
+                cal_F.set(Y)
+                history = [float(np.min(Y[: i + 1].sum(axis=1))) for i in range(n_samples)]
+                cal_history.set(history)
+                surrogate_status.set(
+                    f"Done. Best predicted objective: {optimum['predicted_objectives']}"
+                )
+
+            thread = threading.Thread(target=run_surrogate, daemon=True)
+            thread.start()
+            cal_thread.set(thread)
+
+        else:
+            # NSGA-II (default)
+            def run_optimization():
+                from pymoo.algorithms.moo.nsga2 import NSGA2
+                from pymoo.optimize import minimize
+                from pymoo.termination import get_termination
+
+                algorithm = NSGA2(pop_size=pop_size)
+                termination = get_termination("n_gen", generations)
+
+                res = minimize(
+                    problem,
+                    algorithm,
+                    termination,
+                    seed=42,
+                    verbose=False,
+                )
+
+                if res.F is not None:
+                    cal_F.set(res.F)
+                    cal_X.set(res.X)
+                    if hasattr(res, "history") and res.history:
+                        history = [
+                            float(np.min(gen.opt.get("F").sum(axis=1)))
+                            for gen in res.history
+                            if gen.opt is not None
+                        ]
+                        cal_history.set(history)
+
+            thread = threading.Thread(target=run_optimization, daemon=True)
+            thread.start()
+            cal_thread.set(thread)
 
     @reactive.effect
     @reactive.event(input.btn_stop_cal)
