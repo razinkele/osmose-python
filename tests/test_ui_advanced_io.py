@@ -24,3 +24,40 @@ def test_export_config_roundtrip(tmp_path):
     reader = OsmoseConfigReader()
     loaded = reader.read(tmp_path / "osm_all-parameters.csv")
     assert loaded["simulation.nspecies"] == "3"
+
+
+def test_preview_import_diff():
+    """compute_import_diff should return only changed/new keys with old and new values."""
+    from ui.pages.advanced import compute_import_diff
+
+    current = {"a": "1", "b": "2", "c": "3"}
+    incoming = {"a": "1", "b": "99", "d": "4"}
+    diff = compute_import_diff(current, incoming)
+    assert len(diff) == 2
+    changed = {d["key"]: d for d in diff}
+    assert changed["b"]["old"] == "2"
+    assert changed["b"]["new"] == "99"
+    assert changed["d"]["old"] is None
+    assert changed["d"]["new"] == "4"
+
+
+def test_preview_import_diff_empty():
+    """compute_import_diff should return empty list when configs are identical."""
+    from ui.pages.advanced import compute_import_diff
+
+    current = {"a": "1", "b": "2"}
+    incoming = {"a": "1", "b": "2"}
+    diff = compute_import_diff(current, incoming)
+    assert diff == []
+
+
+def test_preview_import_diff_all_new():
+    """compute_import_diff should show all keys as new when current is empty."""
+    from ui.pages.advanced import compute_import_diff
+
+    current = {}
+    incoming = {"x": "10", "y": "20"}
+    diff = compute_import_diff(current, incoming)
+    assert len(diff) == 2
+    for d in diff:
+        assert d["old"] is None

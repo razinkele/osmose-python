@@ -10,6 +10,21 @@ from osmose.config.writer import OsmoseConfigWriter
 from ui.state import REGISTRY
 
 
+def compute_import_diff(
+    current: dict[str, str], incoming: dict[str, str]
+) -> list[dict[str, str | None]]:
+    """Compute diff between current config and incoming import.
+
+    Returns list of dicts with keys: key, old, new (only changed/new keys).
+    """
+    diff = []
+    for key, new_val in sorted(incoming.items()):
+        old_val = current.get(key)
+        if old_val != new_val:
+            diff.append({"key": key, "old": old_val, "new": new_val})
+    return diff
+
+
 def advanced_ui():
     categories = ["all"] + REGISTRY.categories()
 
@@ -21,6 +36,7 @@ def advanced_ui():
                 ui.input_file(
                     "import_config", "Import OSMOSE config", accept=[".csv", ".properties"]
                 ),
+                ui.output_ui("import_preview"),
                 ui.download_button(
                     "export_config", "Export Current Config", class_="btn-primary w-100"
                 ),
@@ -48,6 +64,8 @@ def advanced_ui():
 
 
 def advanced_server(input, output, session, state):
+    import_pending = reactive.value({})
+
     @reactive.effect
     @reactive.event(input.import_config)
     def handle_import():
@@ -57,10 +75,67 @@ def advanced_server(input, output, session, state):
         filepath = Path(file_info[0]["datapath"])
         reader = OsmoseConfigReader()
         loaded = reader.read_file(filepath)
-        # Merge into current config
+        # Stage for preview instead of merging directly
+        import_pending.set(loaded)
+
+    @render.ui
+    def import_preview():
+        pending = import_pending.get()
+        if not pending:
+            return ui.div()
+
+        diff = compute_import_diff(state.config.get(), pending)
+        if not diff:
+            import_pending.set({})
+            return ui.div(
+                ui.p("No changes detected in imported file.", style="color: #999;"),
+            )
+
+        rows = []
+        for d in diff:
+            old_display = d["old"] if d["old"] is not None else "(new)"
+            rows.append(
+                ui.tags.tr(
+                    ui.tags.td(d["key"], style="font-family: monospace; font-size: 12px;"),
+                    ui.tags.td(
+                        str(old_display),
+                        style="color: #e74c3c;" if d["old"] is not None else "color: #999;",
+                    ),
+                    ui.tags.td(str(d["new"]), style="color: #2ecc71;"),
+                )
+            )
+
+        return ui.div(
+            ui.h6(f"Import Preview: {len(diff)} change(s) detected"),
+            ui.tags.div(
+                ui.tags.table(
+                    ui.tags.thead(
+                        ui.tags.tr(
+                            ui.tags.th("Key"),
+                            ui.tags.th("Current"),
+                            ui.tags.th("New Value"),
+                        )
+                    ),
+                    ui.tags.tbody(*rows),
+                    class_="table table-striped table-sm",
+                ),
+                style="max-height: 200px; overflow-y: auto;",
+            ),
+            ui.input_action_button(
+                "confirm_import", "Confirm Import", class_="btn-success w-100 mt-2"
+            ),
+        )
+
+    @reactive.effect
+    @reactive.event(input.confirm_import)
+    def confirm_import():
+        pending = import_pending.get()
+        if not pending:
+            return
         cfg = dict(state.config.get())
-        cfg.update(loaded)
+        cfg.update(pending)
         state.config.set(cfg)
+        import_pending.set({})
 
     @render.download(filename="osm_all-parameters.csv")
     def export_config():
