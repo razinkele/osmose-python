@@ -1,9 +1,12 @@
 """OSMOSE Python Interface - main Shiny application."""
 
+from pathlib import Path
+
 from shiny import App, ui
-from ui.theme import THEME
-from ui.styles import COLOR_MUTED
+
 from ui.state import AppState
+from ui.theme import THEME
+import ui.charts as _charts  # noqa: F401 — registers custom plotly template
 
 from ui.pages.setup import setup_ui, setup_server
 from ui.pages.grid import grid_ui, grid_server
@@ -16,25 +19,32 @@ from ui.pages.calibration import calibration_ui, calibration_server
 from ui.pages.scenarios import scenarios_ui, scenarios_server
 from ui.pages.advanced import advanced_ui, advanced_server
 
+_WWW = Path(__file__).parent / "www"
+
 
 def _nav_section(label: str):
     """Render a section header in the pill list sidebar."""
     return ui.nav_control(
-        ui.tags.span(
-            label,
-            style=(
-                "font-size: 0.75rem; font-weight: 600; text-transform: uppercase; "
-                "color: #888; padding: 8px 15px 4px; display: block;"
-            ),
-        ),
+        ui.tags.span(label, class_="osmose-section-label"),
     )
 
 
 app_ui = ui.page_fillable(
+    # ── Custom CSS ──────────────────────────────────────────────
+    ui.head_content(ui.include_css(_WWW / "osmose.css")),
     # ── App header ──────────────────────────────────────────────
     ui.div(
-        ui.h4("OSMOSE", ui.tags.small(" | Python Interface", style=COLOR_MUTED)),
-        style="padding: 12px 20px; border-bottom: 1px solid #444;",
+        ui.tags.h4(
+            "OSMOSE",
+            ui.tags.span(" | Python Interface", class_="subtitle"),
+            class_="osmose-logo",
+        ),
+        ui.tags.span(
+            ui.tags.span(class_="dot"),
+            "Marine Ecosystem Simulator",
+            class_="osmose-badge",
+        ),
+        class_="osmose-header",
     ),
     # ── Left pill navigation with grouped sections ──────────────
     ui.navset_pill_list(

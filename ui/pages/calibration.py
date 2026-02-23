@@ -102,12 +102,12 @@ def build_free_params(selected: list[dict]) -> list[FreeParameter]:
 def make_convergence_chart(history: list[float]) -> go.Figure:
     """Line chart of best objective value per generation."""
     if not history:
-        return go.Figure().update_layout(title="Convergence", template="plotly_dark")
+        return go.Figure().update_layout(title="Convergence", template="osmose")
     fig = px.line(x=list(range(len(history))), y=history, title="Convergence")
     fig.update_layout(
         xaxis_title="Generation",
         yaxis_title="Best Objective",
-        template="plotly_dark",
+        template="osmose",
     )
     return fig
 
@@ -118,7 +118,7 @@ def make_pareto_chart(F: np.ndarray, obj_names: list[str]) -> go.Figure:
     fig.update_layout(
         xaxis_title=obj_names[0] if len(obj_names) > 0 else "Obj 1",
         yaxis_title=obj_names[1] if len(obj_names) > 1 else "Obj 2",
-        template="plotly_dark",
+        template="osmose",
     )
     return fig
 
@@ -132,7 +132,7 @@ def make_sensitivity_chart(result: dict) -> go.Figure:
     fig.update_layout(
         title="Sobol Sensitivity Indices",
         barmode="group",
-        template="plotly_dark",
+        template="osmose",
     )
     return fig
 
@@ -456,7 +456,7 @@ def calibration_server(input, output, session, state):
         F = cal_F.get()
         if F is None:
             return go.Figure().update_layout(
-                title="Pareto Front (run calibration first)", template="plotly_dark"
+                title="Pareto Front (run calibration first)", template="osmose"
             )
         return make_pareto_chart(F, ["Biomass RMSE", "Diet Distance"])
 
@@ -488,7 +488,5 @@ def calibration_server(input, output, session, state):
     def sensitivity_chart():
         result = sensitivity_result.get()
         if result is None:
-            return go.Figure().update_layout(
-                title="Sensitivity (click Run)", template="plotly_dark"
-            )
+            return go.Figure().update_layout(title="Sensitivity (click Run)", template="osmose")
         return make_sensitivity_chart(result)

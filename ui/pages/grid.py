@@ -41,7 +41,7 @@ def make_grid_preview(
             lat=lats,
             lon=lons,
             mode="lines",
-            line=dict(width=3, color="#e67e22"),
+            line=dict(width=3, color="#e8a838"),
             name="Grid extent",
         )
     )
@@ -49,11 +49,12 @@ def make_grid_preview(
         projection_type="natural earth",
         showcoastlines=True,
         showland=True,
-        landcolor="#2c3e50",
-        oceancolor="#1a252f",
+        landcolor="#1c2a36",
+        oceancolor="#0f1923",
+        coastlinecolor="#38c9b1",
     )
     title = f"Grid: {ny}x{nx}" if nx and ny else "Grid Extent"
-    fig.update_layout(title=title, template="plotly_dark", height=400)
+    fig.update_layout(title=title, template="osmose", height=400)
     return fig
 
 

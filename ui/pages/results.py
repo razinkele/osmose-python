@@ -33,7 +33,7 @@ def make_timeseries_chart(
     if df.empty:
         return go.Figure().update_layout(title=title)
     fig = px.line(df, x="time", y=value_col, color="species", title=title)
-    fig.update_layout(template="plotly_dark")
+    fig.update_layout(template="osmose")
     return fig
 
 
@@ -57,7 +57,7 @@ def make_diet_heatmap(df: pd.DataFrame) -> go.Figure:
         color_continuous_scale="YlOrRd",
         labels={"x": "Prey", "y": "Predator", "color": "Proportion"},
     )
-    fig.update_layout(template="plotly_dark")
+    fig.update_layout(template="osmose")
     return fig
 
 
@@ -80,7 +80,7 @@ def make_spatial_map(
         labels={"x": "Longitude", "y": "Latitude", "color": var_name},
         title=title or f"{var_name} (t={time_idx})",
     )
-    fig.update_layout(template="plotly_dark")
+    fig.update_layout(template="osmose")
     return fig
 
 
@@ -233,7 +233,7 @@ def results_server(input, output, session, state):
         if rtype == "diet":
             return go.Figure().update_layout(
                 title="Diet data shown in heatmap below",
-                template="plotly_dark",
+                template="osmose",
             )
 
         df = data.get(rtype, pd.DataFrame())
@@ -262,7 +262,7 @@ def results_server(input, output, session, state):
         if ds is None:
             return go.Figure().update_layout(
                 title="No spatial data loaded",
-                template="plotly_dark",
+                template="osmose",
             )
         time_idx = input.spatial_time_idx()
         # Find a suitable variable (prefer 'biomass')
@@ -270,7 +270,7 @@ def results_server(input, output, session, state):
         if not var_names:
             return go.Figure().update_layout(
                 title="No spatial variables found",
-                template="plotly_dark",
+                template="osmose",
             )
         var_name = "biomass" if "biomass" in var_names else var_names[0]
         max_t = ds.sizes.get("time", 1) - 1
