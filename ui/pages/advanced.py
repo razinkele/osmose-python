@@ -8,6 +8,7 @@ from shiny import reactive, render, ui
 from osmose.config.reader import OsmoseConfigReader
 from osmose.config.writer import OsmoseConfigWriter
 from ui.state import REGISTRY
+from ui.styles import COLOR_DANGER, COLOR_MUTED, COLOR_SUCCESS, STYLE_MONO_KEY, STYLE_SCROLL_TABLE
 
 
 def compute_import_diff(
@@ -88,7 +89,7 @@ def advanced_server(input, output, session, state):
         if not diff:
             import_pending.set({})
             return ui.div(
-                ui.p("No changes detected in imported file.", style="color: #999;"),
+                ui.p("No changes detected in imported file.", style=COLOR_MUTED),
             )
 
         rows = []
@@ -96,12 +97,12 @@ def advanced_server(input, output, session, state):
             old_display = d["old"] if d["old"] is not None else "(new)"
             rows.append(
                 ui.tags.tr(
-                    ui.tags.td(d["key"], style="font-family: monospace; font-size: 12px;"),
+                    ui.tags.td(d["key"], style=STYLE_MONO_KEY),
                     ui.tags.td(
                         str(old_display),
-                        style="color: #e74c3c;" if d["old"] is not None else "color: #999;",
+                        style=COLOR_DANGER if d["old"] is not None else COLOR_MUTED,
                     ),
-                    ui.tags.td(str(d["new"]), style="color: #2ecc71;"),
+                    ui.tags.td(str(d["new"]), style=COLOR_SUCCESS),
                 )
             )
 
@@ -173,7 +174,7 @@ def advanced_server(input, output, session, state):
             current_val = cfg.get(f.key_pattern, "-")
             rows.append(
                 ui.tags.tr(
-                    ui.tags.td(f.key_pattern, style="font-family: monospace; font-size: 12px;"),
+                    ui.tags.td(f.key_pattern, style=STYLE_MONO_KEY),
                     ui.tags.td(f.param_type.value),
                     ui.tags.td(str(current_val)),
                     ui.tags.td(f.category),
@@ -197,5 +198,5 @@ def advanced_server(input, output, session, state):
                 ui.tags.tbody(*rows),
                 class_="table table-striped table-hover table-sm",
             ),
-            style="max-height: 600px; overflow-y: auto;",
+            style=STYLE_SCROLL_TABLE,
         )

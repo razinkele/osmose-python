@@ -5,6 +5,7 @@ from pathlib import Path
 from shiny import reactive, render, ui
 
 from osmose.scenarios import Scenario, ScenarioManager
+from ui.styles import STYLE_DIFF_ROW, STYLE_EMPTY
 
 
 def scenarios_ui():
@@ -85,7 +86,7 @@ def scenarios_server(input, output, session, state):
         if not scenarios:
             return ui.div(
                 "No scenarios saved yet.",
-                style="padding: 20px; text-align: center; color: #999;",
+                style=STYLE_EMPTY,
             )
         choices = {s["name"]: f"{s['name']}  ({s.get('description', '')})" for s in scenarios}
         return ui.input_radio_buttons("selected_scenario", None, choices=choices)
@@ -174,7 +175,7 @@ def scenarios_server(input, output, session, state):
         if not diffs:
             return ui.div(
                 "Select two scenarios and click Compare.",
-                style="padding: 20px; text-align: center; color: #999;",
+                style=STYLE_EMPTY,
             )
         rows = []
         for d in diffs:
@@ -183,7 +184,7 @@ def scenarios_server(input, output, session, state):
                     ui.tags.td(d.key, style="font-weight: bold;"),
                     ui.tags.td(str(d.value_a) if d.value_a is not None else "(missing)"),
                     ui.tags.td(str(d.value_b) if d.value_b is not None else "(missing)"),
-                    style="background: rgba(255, 165, 0, 0.15);",
+                    style=STYLE_DIFF_ROW,
                 )
             )
         return ui.tags.table(

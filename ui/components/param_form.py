@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from shiny import ui
 from osmose.schema.base import OsmoseField, ParamType
+from ui.styles import STYLE_HINT
 
 
 def constraint_hint(field: OsmoseField) -> str:
@@ -58,7 +59,7 @@ def render_field(field: OsmoseField, species_idx: int | None = None, prefix: str
             if hint:
                 return ui.div(
                     widget,
-                    ui.tags.small(hint, style="color: #888; font-size: 11px; margin-top: -8px;"),
+                    ui.tags.small(hint, style=STYLE_HINT),
                 )
             return widget
         case ParamType.INT:
@@ -74,7 +75,7 @@ def render_field(field: OsmoseField, species_idx: int | None = None, prefix: str
             if hint:
                 return ui.div(
                     widget,
-                    ui.tags.small(hint, style="color: #888; font-size: 11px; margin-top: -8px;"),
+                    ui.tags.small(hint, style=STYLE_HINT),
                 )
             return widget
         case ParamType.BOOL:

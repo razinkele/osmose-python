@@ -2,6 +2,7 @@
 
 from shiny import App, ui
 from ui.theme import THEME
+from ui.styles import COLOR_MUTED
 from ui.state import AppState
 
 from ui.pages.setup import setup_ui, setup_server
@@ -32,7 +33,7 @@ def _nav_section(label: str):
 app_ui = ui.page_fillable(
     # ── App header ──────────────────────────────────────────────
     ui.div(
-        ui.h4("OSMOSE", ui.tags.small(" | Python Interface", style="color: #999;")),
+        ui.h4("OSMOSE", ui.tags.small(" | Python Interface", style=COLOR_MUTED)),
         style="padding: 12px 20px; border-bottom: 1px solid #444;",
     ),
     # ── Left pill navigation with grouped sections ──────────────

@@ -23,6 +23,7 @@ from osmose.calibration.surrogate import SurrogateCalibrator
 from osmose.config.writer import OsmoseConfigWriter
 from osmose.schema.base import ParamType
 from osmose.schema.registry import ParameterRegistry
+from ui.styles import STYLE_EMPTY
 
 
 class ProgressCallback(Callback):
@@ -466,7 +467,7 @@ def calibration_server(input, output, session, state):
         if X is None or F is None:
             return ui.div(
                 "Run calibration to see best parameters.",
-                style="padding: 20px; text-align: center; color: #999;",
+                style=STYLE_EMPTY,
             )
         order = np.argsort(F.sum(axis=1))[:10]
         selected = collect_selected_params(input, state)

@@ -7,6 +7,7 @@ from shiny import ui, reactive, render
 
 from osmose.config.writer import OsmoseConfigWriter
 from osmose.runner import OsmoseRunner
+from ui.styles import STYLE_CONSOLE
 
 
 def parse_overrides(text: str) -> dict[str, str]:
@@ -76,9 +77,7 @@ def run_server(input, output, session, state):
         text = "\n".join(lines[-200:]) if lines else "No output yet. Click 'Start Run' to begin."
         return ui.tags.pre(
             text,
-            style="background: #111; color: #0f0; height: 500px; overflow-y: auto; "
-            "padding: 12px; border-radius: 6px; font-family: 'Courier New', monospace; "
-            "font-size: 13px; white-space: pre-wrap;",
+            style=STYLE_CONSOLE,
         )
 
     @reactive.effect
