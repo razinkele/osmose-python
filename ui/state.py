@@ -56,6 +56,7 @@ class AppState:
         self.run_result: reactive.Value[RunResult | None] = reactive.Value(None)
         self.scenarios_dir: Path = scenarios_dir
         self.registry = REGISTRY
+        self.jar_path: reactive.Value[str] = reactive.Value("osmose-java/osmose.jar")
 
     def update_config(self, key: str, value: str) -> None:
         """Update a single key in the config dict."""
@@ -80,3 +81,30 @@ class AppState:
                 else:
                     cfg[field.key_pattern] = str(field.default)
         self.config.set(cfg)
+
+
+def sync_inputs(
+    input: object,
+    state: AppState,
+    keys: list[str],
+) -> dict[str, str]:
+    """Read Shiny inputs for the given OSMOSE keys and update state.config.
+
+    For each key, computes the input ID via key.replace(".", "_"), reads the
+    value from input, and calls state.update_config() if non-None.
+
+    Returns:
+        Dict of keys that were actually updated with their new values.
+    """
+    changed: dict[str, str] = {}
+    for key in keys:
+        input_id = key.replace(".", "_")
+        try:
+            val = getattr(input, input_id)()
+        except (AttributeError, TypeError):
+            continue
+        if val is not None:
+            str_val = str(val)
+            changed[key] = str_val
+            state.update_config(key, str_val)
+    return changed

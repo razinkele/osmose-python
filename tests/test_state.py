@@ -70,3 +70,59 @@ def test_appstate_reset_to_defaults():
         assert "grid.ncolumn" in cfg
         # Should have species-indexed params expanded for 3 species
         assert "species.linf.sp0" in cfg
+
+
+def test_appstate_jar_path_default():
+    state = AppState()
+    with reactive.isolate():
+        assert state.jar_path.get() == "osmose-java/osmose.jar"
+
+
+def test_appstate_jar_path_set():
+    state = AppState()
+    with reactive.isolate():
+        state.jar_path.set("/path/to/osmose.jar")
+        assert state.jar_path.get() == "/path/to/osmose.jar"
+
+
+def test_sync_inputs_updates_config():
+    """sync_inputs should update state.config for non-indexed fields with matching input values."""
+    from ui.state import sync_inputs
+
+    state = AppState()
+    with reactive.isolate():
+        state.reset_to_defaults()
+
+        class FakeInput:
+            def __getattr__(self, name):
+                def getter():
+                    if name == "simulation_nspecies":
+                        return 5
+                    if name == "simulation_time_ndtperyear":
+                        return 12
+                    return None
+
+                return getter
+
+        changed = sync_inputs(
+            FakeInput(), state, ["simulation.nspecies", "simulation.time.ndtperyear"]
+        )
+        assert changed["simulation.nspecies"] == "5"
+        assert changed["simulation.time.ndtperyear"] == "12"
+        assert state.config.get()["simulation.nspecies"] == "5"
+
+
+def test_sync_inputs_skips_none():
+    """sync_inputs should skip keys where the input value is None."""
+    from ui.state import sync_inputs
+
+    state = AppState()
+    with reactive.isolate():
+        state.reset_to_defaults()
+
+        class FakeInput:
+            def __getattr__(self, name):
+                return lambda: None
+
+        changed = sync_inputs(FakeInput(), state, ["simulation.nspecies"])
+        assert changed == {}
