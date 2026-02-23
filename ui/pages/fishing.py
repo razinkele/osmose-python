@@ -1,8 +1,12 @@
 """Fishing configuration page."""
 
-from shiny import ui, render
+from shiny import ui, reactive, render
+
 from osmose.schema.fishing import FISHING_FIELDS
 from ui.components.param_form import render_field
+from ui.state import sync_inputs
+
+FISHING_GLOBAL_KEYS: list[str] = [f.key_pattern for f in FISHING_FIELDS if not f.indexed]
 
 
 def fishing_ui():
@@ -53,3 +57,23 @@ def fishing_server(input, output, session, state):
             )
             panels.append(card)
         return ui.div(*panels)
+
+    @reactive.effect
+    def sync_fishing_inputs():
+        sync_inputs(input, state, FISHING_GLOBAL_KEYS)
+
+    @reactive.effect
+    def sync_fishery_inputs():
+        n = input.n_fisheries()
+        fishery_fields = [f for f in FISHING_FIELDS if f.indexed and "fsh" in f.key_pattern]
+        for i in range(n):
+            keys = [f.resolve_key(i) for f in fishery_fields]
+            sync_inputs(input, state, keys)
+
+    @reactive.effect
+    def sync_mpa_inputs():
+        n = input.n_mpas()
+        mpa_fields = [f for f in FISHING_FIELDS if f.indexed and "mpa" in f.key_pattern]
+        for i in range(n):
+            keys = [f.resolve_key(i) for f in mpa_fields]
+            sync_inputs(input, state, keys)

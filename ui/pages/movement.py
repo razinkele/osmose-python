@@ -1,8 +1,12 @@
 """Movement / spatial distribution page."""
 
-from shiny import ui, render
+from shiny import ui, reactive, render
+
 from osmose.schema.movement import MOVEMENT_FIELDS
 from ui.components.param_form import render_field
+from ui.state import sync_inputs
+
+MOVEMENT_GLOBAL_KEYS: list[str] = [f.key_pattern for f in MOVEMENT_FIELDS if not f.indexed]
 
 
 def movement_ui():
@@ -31,9 +35,9 @@ def movement_server(input, output, session, state):
     @render.ui
     def species_movement_panels():
         per_species = [f for f in MOVEMENT_FIELDS if f.indexed and "map" not in f.key_pattern]
-        # Show for 3 species by default (will be dynamic later)
+        n_species = int(state.config.get().get("simulation.nspecies", "3"))
         panels = []
-        for i in range(3):
+        for i in range(n_species):
             panels.extend([render_field(f, species_idx=i) for f in per_species])
         return ui.div(*panels)
 
@@ -49,3 +53,23 @@ def movement_server(input, output, session, state):
             )
             panels.append(card)
         return ui.div(*panels)
+
+    @reactive.effect
+    def sync_movement_inputs():
+        sync_inputs(input, state, MOVEMENT_GLOBAL_KEYS)
+
+    @reactive.effect
+    def sync_species_movement_inputs():
+        per_species = [f for f in MOVEMENT_FIELDS if f.indexed and "map" not in f.key_pattern]
+        n_species = int(state.config.get().get("simulation.nspecies", "3"))
+        for i in range(n_species):
+            keys = [f.resolve_key(i) for f in per_species]
+            sync_inputs(input, state, keys)
+
+    @reactive.effect
+    def sync_map_inputs():
+        n = input.n_maps()
+        map_fields = [f for f in MOVEMENT_FIELDS if f.indexed and "map" in f.key_pattern]
+        for i in range(n):
+            keys = [f.resolve_key(i) for f in map_fields]
+            sync_inputs(input, state, keys)

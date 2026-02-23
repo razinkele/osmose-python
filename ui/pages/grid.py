@@ -1,11 +1,14 @@
 """Grid configuration page."""
 
 import plotly.graph_objects as go
-from shiny import ui
+from shiny import ui, reactive
 from shinywidgets import output_widget, render_plotly
 
 from osmose.schema.grid import GRID_FIELDS
 from ui.components.param_form import render_field
+from ui.state import sync_inputs
+
+GRID_GLOBAL_KEYS: list[str] = [f.key_pattern for f in GRID_FIELDS if not f.indexed]
 
 
 def make_grid_preview(
@@ -55,7 +58,6 @@ def make_grid_preview(
 
 
 def grid_ui():
-    # Separate grid type selector from other fields
     grid_type_field = next((f for f in GRID_FIELDS if "classname" in f.key_pattern), None)
     regular_fields = [
         f
@@ -103,3 +105,7 @@ def grid_server(input, output, session, state):
         nx = int(input.grid_ncolumn() or 0)
         ny = int(input.grid_nline() or 0)
         return make_grid_preview(ul_lat, ul_lon, lr_lat, lr_lon, nx, ny)
+
+    @reactive.effect
+    def sync_grid_inputs():
+        sync_inputs(input, state, GRID_GLOBAL_KEYS)
