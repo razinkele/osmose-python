@@ -15,18 +15,51 @@ from ui.pages.calibration import calibration_ui, calibration_server
 from ui.pages.scenarios import scenarios_ui, scenarios_server
 from ui.pages.advanced import advanced_ui, advanced_server
 
-app_ui = ui.page_navbar(
-    ui.nav_panel("Setup", setup_ui()),
-    ui.nav_panel("Grid & Maps", grid_ui()),
-    ui.nav_panel("Forcing", forcing_ui()),
-    ui.nav_panel("Fishing", fishing_ui()),
-    ui.nav_panel("Movement", movement_ui()),
-    ui.nav_panel("Run", run_ui()),
-    ui.nav_panel("Results", results_ui()),
-    ui.nav_panel("Calibration", calibration_ui()),
-    ui.nav_panel("Scenarios", scenarios_ui()),
-    ui.nav_panel("Advanced", advanced_ui()),
-    title="OSMOSE | Python Interface",
+
+def _nav_section(label: str):
+    """Render a section header in the pill list sidebar."""
+    return ui.nav_control(
+        ui.tags.span(
+            label,
+            style=(
+                "font-size: 0.75rem; font-weight: 600; text-transform: uppercase; "
+                "color: #888; padding: 8px 15px 4px; display: block;"
+            ),
+        ),
+    )
+
+
+app_ui = ui.page_fillable(
+    # ── App header ──────────────────────────────────────────────
+    ui.div(
+        ui.h4("OSMOSE", ui.tags.small(" | Python Interface", style="color: #999;")),
+        style="padding: 12px 20px; border-bottom: 1px solid #444;",
+    ),
+    # ── Left pill navigation with grouped sections ──────────────
+    ui.navset_pill_list(
+        # Configure
+        _nav_section("Configure"),
+        ui.nav_panel("Setup", setup_ui(), value="setup"),
+        ui.nav_panel("Grid & Maps", grid_ui(), value="grid"),
+        ui.nav_panel("Forcing", forcing_ui(), value="forcing"),
+        ui.nav_panel("Fishing", fishing_ui(), value="fishing"),
+        ui.nav_panel("Movement", movement_ui(), value="movement"),
+        # Execute
+        _nav_section("Execute"),
+        ui.nav_panel("Run", run_ui(), value="run"),
+        ui.nav_panel("Results", results_ui(), value="results"),
+        # Optimize
+        _nav_section("Optimize"),
+        ui.nav_panel("Calibration", calibration_ui(), value="calibration"),
+        # Manage
+        _nav_section("Manage"),
+        ui.nav_panel("Scenarios", scenarios_ui(), value="scenarios"),
+        ui.nav_panel("Advanced", advanced_ui(), value="advanced"),
+        id="main_nav",
+        selected="setup",
+        widths=(2, 10),
+        well=False,
+    ),
     theme=THEME,
 )
 
