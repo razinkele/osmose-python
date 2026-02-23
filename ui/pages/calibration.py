@@ -3,17 +3,26 @@
 
 from __future__ import annotations
 
+import tempfile
+import threading
+from pathlib import Path
+
 import numpy as np
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from shiny import render, ui
+from shiny import reactive, render, ui
 from shinywidgets import output_widget, render_plotly
 
+from osmose.calibration.objectives import biomass_rmse, diet_distance
+from osmose.calibration.problem import FreeParameter, OsmoseCalibrationProblem
+from osmose.calibration.sensitivity import SensitivityAnalyzer
+from osmose.config.writer import OsmoseConfigWriter
 from osmose.schema.base import ParamType
 from osmose.schema.registry import ParameterRegistry
 
 
-# ── Helper functions (module-level, testable without Shiny) ──────────────────
+# -- Helper functions (module-level, testable without Shiny) -------------------
 
 
 def get_calibratable_params(registry: ParameterRegistry, n_species: int) -> list[dict]:
@@ -38,6 +47,30 @@ def get_calibratable_params(registry: ParameterRegistry, n_species: int) -> list
                 }
             )
     return params
+
+
+def collect_selected_params(input: object, state) -> list[dict]:
+    """Return calibratable param dicts where the checkbox is checked."""
+    cfg = state.config.get()
+    n_species = int(cfg.get("simulation.nspecies", "3"))
+    all_params = get_calibratable_params(state.registry, n_species)
+    selected = []
+    for p in all_params:
+        input_id = f"cal_param_{p['key'].replace('.', '_')}"
+        try:
+            if getattr(input, input_id)():
+                selected.append(p)
+        except (AttributeError, TypeError):
+            continue
+    return selected
+
+
+def build_free_params(selected: list[dict]) -> list[FreeParameter]:
+    """Convert selected param dicts to FreeParameter objects."""
+    return [
+        FreeParameter(key=p["key"], lower_bound=p["lower"], upper_bound=p["upper"])
+        for p in selected
+    ]
 
 
 def make_convergence_chart(history: list[float]) -> go.Figure:
@@ -78,7 +111,7 @@ def make_sensitivity_chart(result: dict) -> go.Figure:
     return fig
 
 
-# ── Shiny UI / Server ───────────────────────────────────────────────────────
+# -- Shiny UI / Server --------------------------------------------------------
 
 
 def calibration_ui():
@@ -100,7 +133,10 @@ def calibration_ui():
                 ui.input_numeric("cal_n_parallel", "Parallel workers", value=4, min=1, max=32),
                 ui.hr(),
                 ui.h5("Free Parameters"),
-                ui.p("Select parameters to optimize:", style="color: #999; font-size: 13px;"),
+                ui.p(
+                    "Select parameters to optimize:",
+                    style="color: #999; font-size: 13px;",
+                ),
                 ui.output_ui("free_param_selector"),
                 ui.hr(),
                 ui.h5("Objectives"),
@@ -154,9 +190,19 @@ def calibration_ui():
 
 
 def calibration_server(input, output, session, state):
+    cal_history = reactive.value([])
+    cal_F = reactive.value(None)
+    cal_X = reactive.value(None)
+    sensitivity_result = reactive.value(None)
+    cal_thread = reactive.value(None)
+    cancel_flag = reactive.value(False)
+
     @render.text
     def cal_status():
-        return "Ready. Configure parameters and objectives, then click Start."
+        hist = cal_history.get()
+        if not hist:
+            return "Ready. Configure parameters and objectives, then click Start."
+        return f"Generation {len(hist)} — Best: {hist[-1]:.4f}"
 
     @render.ui
     def free_param_selector():
@@ -174,33 +220,183 @@ def calibration_server(input, output, session, state):
         ]
         return ui.div(*checkboxes)
 
+    @reactive.effect
+    @reactive.event(input.btn_start_cal)
+    def handle_start_cal():
+        selected = collect_selected_params(input, state)
+        if not selected:
+            cal_history.set([])
+            return
+
+        jar_path = Path(state.jar_path.get())
+        if not jar_path.exists():
+            return
+
+        obs_bio = input.observed_biomass()
+        obs_diet = input.observed_diet()
+        if not obs_bio and not obs_diet:
+            return
+
+        free_params = build_free_params(selected)
+        work_dir = Path(tempfile.mkdtemp(prefix="osmose_cal_"))
+
+        writer = OsmoseConfigWriter()
+        config_dir = work_dir / "config"
+        writer.write(state.config.get(), config_dir)
+        base_config = config_dir / "osm_all-parameters.csv"
+
+        objective_fns = []
+        if obs_bio:
+            obs_bio_df = pd.read_csv(obs_bio[0]["datapath"])
+            objective_fns.append(lambda r, df=obs_bio_df: biomass_rmse(r.biomass(), df))
+        if obs_diet:
+            obs_diet_df = pd.read_csv(obs_diet[0]["datapath"])
+            objective_fns.append(lambda r, df=obs_diet_df: diet_distance(r.diet_matrix(), df))
+
+        if not objective_fns:
+            return
+
+        problem = OsmoseCalibrationProblem(
+            free_params=free_params,
+            objective_fns=objective_fns,
+            base_config_path=base_config,
+            jar_path=jar_path,
+            work_dir=work_dir,
+        )
+
+        cancel_flag.set(False)
+        cal_history.set([])
+        cal_F.set(None)
+        cal_X.set(None)
+
+        def run_optimization():
+            from pymoo.algorithms.moo.nsga2 import NSGA2
+            from pymoo.optimize import minimize
+            from pymoo.termination import get_termination
+
+            algorithm = NSGA2(pop_size=int(input.cal_pop_size()))
+            termination = get_termination("n_gen", int(input.cal_generations()))
+
+            res = minimize(
+                problem,
+                algorithm,
+                termination,
+                seed=42,
+                verbose=False,
+            )
+
+            if res.F is not None:
+                cal_F.set(res.F)
+                cal_X.set(res.X)
+                if hasattr(res, "history") and res.history:
+                    history = [
+                        float(np.min(gen.opt.get("F").sum(axis=1)))
+                        for gen in res.history
+                        if gen.opt is not None
+                    ]
+                    cal_history.set(history)
+
+        thread = threading.Thread(target=run_optimization, daemon=True)
+        thread.start()
+        cal_thread.set(thread)
+
+    @reactive.effect
+    @reactive.event(input.btn_stop_cal)
+    def handle_stop_cal():
+        cancel_flag.set(True)
+
+    @reactive.effect
+    @reactive.event(input.btn_sensitivity)
+    def handle_sensitivity():
+        selected = collect_selected_params(input, state)
+        if not selected:
+            return
+
+        jar_path = Path(state.jar_path.get())
+        if not jar_path.exists():
+            return
+
+        param_names = [p["key"] for p in selected]
+        param_bounds = [(p["lower"], p["upper"]) for p in selected]
+        analyzer = SensitivityAnalyzer(param_names, param_bounds)
+
+        obs_bio = input.observed_biomass()
+        if not obs_bio:
+            return
+        obs_bio_df = pd.read_csv(obs_bio[0]["datapath"])
+
+        def run_sensitivity():
+            samples = analyzer.generate_samples(n_base=64)
+            sens_work_dir = Path(tempfile.mkdtemp(prefix="osmose_sens_"))
+            writer = OsmoseConfigWriter()
+            config_dir = sens_work_dir / "config"
+            writer.write(state.config.get(), config_dir)
+            base_config = config_dir / "osm_all-parameters.csv"
+
+            Y = np.zeros(samples.shape[0])
+            for idx, row in enumerate(samples):
+                overrides = {selected[j]["key"]: str(row[j]) for j in range(len(selected))}
+                try:
+                    prob = OsmoseCalibrationProblem(
+                        free_params=build_free_params(selected),
+                        objective_fns=[lambda r, df=obs_bio_df: biomass_rmse(r.biomass(), df)],
+                        base_config_path=base_config,
+                        jar_path=jar_path,
+                        work_dir=sens_work_dir / f"sens_{idx}",
+                    )
+                    result = prob._run_single(overrides, run_id=idx)
+                    Y[idx] = result[0]
+                except Exception:
+                    Y[idx] = float("inf")
+
+            sens_result = analyzer.analyze(Y)
+            sensitivity_result.set(sens_result)
+
+        thread = threading.Thread(target=run_sensitivity, daemon=True)
+        thread.start()
+
     @render_plotly
     def convergence_chart():
-        # Placeholder: no history yet
-        return make_convergence_chart([])
+        return make_convergence_chart(cal_history.get())
 
     @render_plotly
     def pareto_chart():
-        # Placeholder: no calibration result yet
-        return make_pareto_chart(
-            np.array([[0.0, 0.0]]),
-            ["Biomass RMSE", "Diet Distance"],
-        )
+        F = cal_F.get()
+        if F is None:
+            return go.Figure().update_layout(
+                title="Pareto Front (run calibration first)", template="plotly_dark"
+            )
+        return make_pareto_chart(F, ["Biomass RMSE", "Diet Distance"])
 
     @render.ui
     def best_params_table():
-        return ui.div(
-            "Best parameter values will appear here after calibration.",
-            style="padding: 20px; text-align: center; color: #999;",
+        X = cal_X.get()
+        F = cal_F.get()
+        if X is None or F is None:
+            return ui.div(
+                "Run calibration to see best parameters.",
+                style="padding: 20px; text-align: center; color: #999;",
+            )
+        order = np.argsort(F.sum(axis=1))[:10]
+        selected = collect_selected_params(input, state)
+        headers = [ui.tags.th(p["key"].split(".")[-1]) for p in selected]
+        headers.append(ui.tags.th("Total Obj"))
+        rows = []
+        for idx in order:
+            cells = [ui.tags.td(f"{v:.4f}") for v in X[idx]]
+            cells.append(ui.tags.td(f"{F[idx].sum():.4f}"))
+            rows.append(ui.tags.tr(*cells))
+        return ui.tags.table(
+            ui.tags.thead(ui.tags.tr(*headers)),
+            ui.tags.tbody(*rows),
+            class_="table table-sm table-striped",
         )
 
     @render_plotly
     def sensitivity_chart():
-        # Placeholder: no sensitivity result yet
-        return make_sensitivity_chart(
-            {
-                "param_names": ["(none)"],
-                "S1": np.array([0.0]),
-                "ST": np.array([0.0]),
-            }
-        )
+        result = sensitivity_result.get()
+        if result is None:
+            return go.Figure().update_layout(
+                title="Sensitivity (click Run)", template="plotly_dark"
+            )
+        return make_sensitivity_chart(result)
