@@ -12,22 +12,20 @@ FISHING_GLOBAL_KEYS: list[str] = [f.key_pattern for f in FISHING_FIELDS if not f
 def fishing_ui():
     global_fields = [f for f in FISHING_FIELDS if not f.indexed]
 
-    return ui.page_fluid(
-        ui.layout_columns(
-            ui.card(
-                ui.card_header("Fisheries Module"),
-                *[render_field(f) for f in global_fields],
-                ui.hr(),
-                ui.input_numeric("n_fisheries", "Number of fisheries", value=1, min=0, max=20),
-                ui.output_ui("fishery_panels"),
-            ),
-            ui.card(
-                ui.card_header("Marine Protected Areas"),
-                ui.input_numeric("n_mpas", "Number of MPAs", value=0, min=0, max=10),
-                ui.output_ui("mpa_panels"),
-            ),
-            col_widths=[8, 4],
+    return ui.layout_columns(
+        ui.card(
+            ui.card_header("Fisheries Module"),
+            *[render_field(f) for f in global_fields],
+            ui.hr(),
+            ui.input_numeric("n_fisheries", "Number of fisheries", value=1, min=0, max=20),
+            ui.output_ui("fishery_panels"),
         ),
+        ui.card(
+            ui.card_header("Marine Protected Areas"),
+            ui.input_numeric("n_mpas", "Number of MPAs", value=0, min=0, max=10),
+            ui.output_ui("mpa_panels"),
+        ),
+        col_widths=[8, 4],
     )
 
 

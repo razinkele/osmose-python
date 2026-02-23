@@ -8,7 +8,7 @@ from osmose.scenarios import Scenario, ScenarioManager
 
 
 def scenarios_ui():
-    return ui.page_fluid(
+    return ui.div(
         ui.layout_columns(
             # Left: Save & manage
             ui.card(

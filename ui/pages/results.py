@@ -90,7 +90,7 @@ def make_spatial_map(
 
 
 def results_ui():
-    return ui.page_fluid(
+    return ui.div(
         ui.layout_columns(
             # Sidebar: Controls
             ui.card(

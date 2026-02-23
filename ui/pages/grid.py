@@ -73,25 +73,23 @@ def grid_ui():
         f for f in GRID_FIELDS if "netcdf" in f.key_pattern or f.key_pattern.startswith("grid.var")
     ]
 
-    return ui.page_fluid(
-        ui.layout_columns(
-            ui.card(
-                ui.card_header("Grid Type"),
-                render_field(grid_type_field) if grid_type_field else ui.div(),
-                ui.hr(),
-                ui.h5("Regular Grid Settings"),
-                *[render_field(f) for f in regular_fields],
-                ui.hr(),
-                ui.h5("NetCDF Grid Settings"),
-                *[render_field(f) for f in netcdf_fields if not f.advanced],
-            ),
-            ui.card(
-                ui.card_header("Grid Preview"),
-                ui.p("Upload a grid mask or configure coordinates to see a preview."),
-                output_widget("grid_preview"),
-            ),
-            col_widths=[6, 6],
+    return ui.layout_columns(
+        ui.card(
+            ui.card_header("Grid Type"),
+            render_field(grid_type_field) if grid_type_field else ui.div(),
+            ui.hr(),
+            ui.h5("Regular Grid Settings"),
+            *[render_field(f) for f in regular_fields],
+            ui.hr(),
+            ui.h5("NetCDF Grid Settings"),
+            *[render_field(f) for f in netcdf_fields if not f.advanced],
         ),
+        ui.card(
+            ui.card_header("Grid Preview"),
+            ui.p("Upload a grid mask or configure coordinates to see a preview."),
+            output_widget("grid_preview"),
+        ),
+        col_widths=[6, 6],
     )
 
 

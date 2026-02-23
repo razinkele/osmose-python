@@ -22,24 +22,22 @@ def get_species_keys(species_idx: int, show_advanced: bool = False) -> list[str]
 
 
 def setup_ui():
-    return ui.page_fluid(
-        ui.layout_columns(
-            # Left column: Simulation settings
-            ui.card(
-                ui.card_header("Simulation Settings"),
-                render_category(
-                    [f for f in SIMULATION_FIELDS if not f.advanced],
-                ),
+    return ui.layout_columns(
+        # Left column: Simulation settings
+        ui.card(
+            ui.card_header("Simulation Settings"),
+            render_category(
+                [f for f in SIMULATION_FIELDS if not f.advanced],
             ),
-            # Right column: Species configuration (dynamic)
-            ui.card(
-                ui.card_header("Species Configuration"),
-                ui.input_numeric("n_species", "Number of focal species", value=3, min=1, max=20),
-                ui.input_switch("show_advanced_species", "Show advanced parameters", value=False),
-                ui.output_ui("species_panels"),
-            ),
-            col_widths=[4, 8],
         ),
+        # Right column: Species configuration (dynamic)
+        ui.card(
+            ui.card_header("Species Configuration"),
+            ui.input_numeric("n_species", "Number of focal species", value=3, min=1, max=20),
+            ui.input_switch("show_advanced_species", "Show advanced parameters", value=False),
+            ui.output_ui("species_panels"),
+        ),
+        col_widths=[4, 8],
     )
 
 

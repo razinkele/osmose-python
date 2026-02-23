@@ -12,22 +12,20 @@ MOVEMENT_GLOBAL_KEYS: list[str] = [f.key_pattern for f in MOVEMENT_FIELDS if not
 def movement_ui():
     global_fields = [f for f in MOVEMENT_FIELDS if not f.indexed]
 
-    return ui.page_fluid(
-        ui.layout_columns(
-            ui.card(
-                ui.card_header("Movement Settings"),
-                *[render_field(f) for f in global_fields if not f.advanced],
-                ui.hr(),
-                ui.h5("Per-Species Distribution Method"),
-                ui.output_ui("species_movement_panels"),
-            ),
-            ui.card(
-                ui.card_header("Distribution Maps"),
-                ui.input_numeric("n_maps", "Number of distribution maps", value=1, min=0, max=50),
-                ui.output_ui("map_panels"),
-            ),
-            col_widths=[5, 7],
+    return ui.layout_columns(
+        ui.card(
+            ui.card_header("Movement Settings"),
+            *[render_field(f) for f in global_fields if not f.advanced],
+            ui.hr(),
+            ui.h5("Per-Species Distribution Method"),
+            ui.output_ui("species_movement_panels"),
         ),
+        ui.card(
+            ui.card_header("Distribution Maps"),
+            ui.input_numeric("n_maps", "Number of distribution maps", value=1, min=0, max=50),
+            ui.output_ui("map_panels"),
+        ),
+        col_widths=[5, 7],
     )
 
 

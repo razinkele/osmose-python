@@ -28,7 +28,7 @@ def compute_import_diff(
 def advanced_ui():
     categories = ["all"] + REGISTRY.categories()
 
-    return ui.page_fluid(
+    return ui.div(
         ui.layout_columns(
             # Controls
             ui.card(

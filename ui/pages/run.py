@@ -29,39 +29,31 @@ def write_temp_config(config: dict[str, str], output_dir: Path) -> Path:
 
 
 def run_ui():
-    return ui.page_fluid(
-        ui.layout_columns(
-            # Left: Run controls
-            ui.card(
-                ui.card_header("Run Configuration"),
-                ui.input_text("jar_path", "OSMOSE JAR path", value="osmose-java/osmose.jar"),
-                ui.input_text(
-                    "java_opts", "Java options", value="-Xmx2g", placeholder="-Xmx4g -Xms1g"
-                ),
-                ui.input_text_area(
-                    "param_overrides", "Parameter overrides (key=value, one per line)", rows=4
-                ),
-                ui.hr(),
-                ui.layout_columns(
-                    ui.input_action_button(
-                        "btn_run", "Start Run", class_="btn-success btn-lg w-100"
-                    ),
-                    ui.input_action_button(
-                        "btn_cancel", "Cancel", class_="btn-danger btn-lg w-100"
-                    ),
-                    col_widths=[6, 6],
-                ),
-                ui.hr(),
-                ui.h5("Run Status"),
-                ui.output_text("run_status"),
+    return ui.layout_columns(
+        # Left: Run controls
+        ui.card(
+            ui.card_header("Run Configuration"),
+            ui.input_text("jar_path", "OSMOSE JAR path", value="osmose-java/osmose.jar"),
+            ui.input_text("java_opts", "Java options", value="-Xmx2g", placeholder="-Xmx4g -Xms1g"),
+            ui.input_text_area(
+                "param_overrides", "Parameter overrides (key=value, one per line)", rows=4
             ),
-            # Right: Console output
-            ui.card(
-                ui.card_header("Console Output"),
-                ui.output_ui("run_console"),
+            ui.hr(),
+            ui.layout_columns(
+                ui.input_action_button("btn_run", "Start Run", class_="btn-success btn-lg w-100"),
+                ui.input_action_button("btn_cancel", "Cancel", class_="btn-danger btn-lg w-100"),
+                col_widths=[6, 6],
             ),
-            col_widths=[4, 8],
+            ui.hr(),
+            ui.h5("Run Status"),
+            ui.output_text("run_status"),
         ),
+        # Right: Console output
+        ui.card(
+            ui.card_header("Console Output"),
+            ui.output_ui("run_console"),
+        ),
+        col_widths=[4, 8],
     )
 
 
