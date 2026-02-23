@@ -175,3 +175,55 @@ def test_evaluate_exception_leaves_inf(tmp_path):
 
     assert np.all(np.isinf(out["F"][0]))  # First candidate failed
     assert np.array_equal(out["F"][1], [1.0, 2.0])  # Second succeeded
+
+
+def test_n_parallel_default(tmp_path):
+    """n_parallel defaults to 1."""
+    problem = _make_problem(tmp_path)
+    assert problem.n_parallel == 1
+
+
+def test_n_parallel_stored(tmp_path):
+    """n_parallel is stored correctly when passed explicitly."""
+    params = [
+        FreeParameter("species.k.sp0", 0.1, 0.5),
+        FreeParameter("species.linf.sp0", 10, 200),
+    ]
+    problem = OsmoseCalibrationProblem(
+        free_params=params,
+        objective_fns=[lambda r: 0.0, lambda r: 0.0],
+        base_config_path=tmp_path / "config",
+        jar_path=tmp_path / "fake.jar",
+        work_dir=tmp_path / "work",
+        n_parallel=4,
+    )
+    assert problem.n_parallel == 4
+
+
+def test_n_parallel_clamps_to_one(tmp_path):
+    """n_parallel below 1 is clamped to 1."""
+    params = [FreeParameter("species.k.sp0", 0.1, 0.5)]
+    problem = OsmoseCalibrationProblem(
+        free_params=params,
+        objective_fns=[lambda r: 0.0],
+        base_config_path=tmp_path / "config",
+        jar_path=tmp_path / "fake.jar",
+        work_dir=tmp_path / "work",
+        n_parallel=0,
+    )
+    assert problem.n_parallel == 1
+
+
+def test_evaluate_parallel(tmp_path):
+    """Parallel evaluation with n_parallel>1 produces the same results."""
+    problem = _make_problem(tmp_path)
+    problem.n_parallel = 4
+    X = np.array([[0.2, 50.0], [0.3, 100.0], [0.4, 150.0]])
+    out = {}
+
+    with patch.object(problem, "_run_single", return_value=[1.0, 2.0]) as mock_run:
+        problem._evaluate(X, out)
+
+    assert mock_run.call_count == 3
+    assert out["F"].shape == (3, 2)
+    assert np.array_equal(out["F"], np.array([[1.0, 2.0], [1.0, 2.0], [1.0, 2.0]]))

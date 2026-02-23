@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -38,6 +39,7 @@ class OsmoseCalibrationProblem(Problem):
         jar_path: Path,
         work_dir: Path,
         java_cmd: str = "java",
+        n_parallel: int = 1,
     ):
         self.free_params = free_params
         self.objective_fns = objective_fns
@@ -45,6 +47,7 @@ class OsmoseCalibrationProblem(Problem):
         self.jar_path = jar_path
         self.work_dir = work_dir
         self.java_cmd = java_cmd
+        self.n_parallel = max(1, n_parallel)
 
         xl = np.array([fp.lower_bound for fp in free_params])
         xu = np.array([fp.upper_bound for fp in free_params])
@@ -61,25 +64,45 @@ class OsmoseCalibrationProblem(Problem):
         """Evaluate a population of candidates.
 
         X has shape (pop_size, n_var). Each row is a candidate.
+        If n_parallel > 1, candidates are evaluated concurrently using threads.
         """
         F = np.full((X.shape[0], self.n_obj), np.inf)
 
-        for i, params in enumerate(X):
-            overrides = {}
-            for j, fp in enumerate(self.free_params):
-                val = params[j]
-                if fp.transform == "log":
-                    val = 10**val
-                overrides[fp.key] = str(val)
-
-            try:
-                objectives = self._run_single(overrides, run_id=i)
-                for k, obj_val in enumerate(objectives):
-                    F[i, k] = obj_val
-            except Exception:
-                pass  # Leave as inf
+        if self.n_parallel > 1:
+            with ThreadPoolExecutor(max_workers=self.n_parallel) as executor:
+                futures = {
+                    executor.submit(self._evaluate_candidate, i, params): i
+                    for i, params in enumerate(X)
+                }
+                for future in futures:
+                    i = futures[future]
+                    try:
+                        objectives = future.result()
+                        for k, obj_val in enumerate(objectives):
+                            F[i, k] = obj_val
+                    except Exception:
+                        pass  # Leave as inf
+        else:
+            for i, params in enumerate(X):
+                try:
+                    objectives = self._evaluate_candidate(i, params)
+                    for k, obj_val in enumerate(objectives):
+                        F[i, k] = obj_val
+                except Exception:
+                    pass  # Leave as inf
 
         out["F"] = F
+
+    def _evaluate_candidate(self, i: int, params: np.ndarray) -> list[float]:
+        """Evaluate a single candidate and return objective values."""
+        overrides = {}
+        for j, fp in enumerate(self.free_params):
+            val = params[j]
+            if fp.transform == "log":
+                val = 10**val
+            overrides[fp.key] = str(val)
+
+        return self._run_single(overrides, run_id=i)
 
     def _run_single(self, overrides: dict[str, str], run_id: int) -> list[float]:
         """Run OSMOSE synchronously with overrides and return objective values.

@@ -285,12 +285,15 @@ def calibration_server(input, output, session, state):
         if not objective_fns:
             return
 
+        n_parallel = int(input.cal_n_parallel())
+
         problem = OsmoseCalibrationProblem(
             free_params=free_params,
             objective_fns=objective_fns,
             base_config_path=base_config,
             jar_path=jar_path,
             work_dir=work_dir,
+            n_parallel=n_parallel,
         )
 
         cancel_flag.set(False)
