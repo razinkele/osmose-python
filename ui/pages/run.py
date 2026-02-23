@@ -70,6 +70,10 @@ def run_server(input, output, session, state):
     status = reactive.value("Idle")
     runner_ref = reactive.value(None)
 
+    @reactive.effect
+    def sync_jar_path():
+        state.jar_path.set(input.jar_path())
+
     @render.text
     def run_status():
         return status.get()
@@ -88,7 +92,7 @@ def run_server(input, output, session, state):
     @reactive.effect
     @reactive.event(input.btn_run)
     async def handle_run():
-        jar_path = Path(input.jar_path())
+        jar_path = Path(state.jar_path.get())
         if not jar_path.exists():
             status.set(f"Error: JAR not found at {jar_path}")
             return
