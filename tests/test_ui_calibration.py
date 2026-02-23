@@ -83,7 +83,7 @@ def test_nsga2_progress_callback():
     """Test that ProgressCallback correctly appends history and handles cancellation."""
     from unittest.mock import MagicMock
 
-    from ui.pages.calibration import ProgressCallback
+    from ui.pages.calibration import _make_progress_callback
 
     # Simulate cal_history as a list-accumulating object
     collected = []
@@ -92,7 +92,7 @@ def test_nsga2_progress_callback():
         collected.append(val)
 
     cancel_getter = MagicMock(return_value=False)
-    cb = ProgressCallback(
+    cb = _make_progress_callback(
         cal_history_append=append_to_history,
         cancel_check=cancel_getter,
     )

@@ -5,13 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
-import xarray as xr
 from shiny import reactive, ui
 from shinywidgets import output_widget, render_plotly
-
-from osmose.results import OsmoseResults
 
 
 # ---------------------------------------------------------------------------
@@ -32,6 +28,8 @@ def make_timeseries_chart(
         df = df[df["species"] == species]
     if df.empty:
         return go.Figure().update_layout(title=title)
+    import plotly.express as px
+
     fig = px.line(df, x="time", y=value_col, color="species", title=title)
     fig.update_layout(template="osmose")
     return fig
@@ -44,6 +42,8 @@ def make_diet_heatmap(df: pd.DataFrame) -> go.Figure:
     prey_cols = [c for c in df.columns if c.startswith("prey_")]
     if not prey_cols:
         return go.Figure().update_layout(title="Diet Composition (no prey data)")
+    import plotly.express as px
+
     if "species" in df.columns:
         matrix = df.groupby("species")[prey_cols].mean()
     else:
@@ -62,12 +62,14 @@ def make_diet_heatmap(df: pd.DataFrame) -> go.Figure:
 
 
 def make_spatial_map(
-    ds: xr.Dataset,
+    ds,
     var_name: str,
     time_idx: int = 0,
     title: str | None = None,
 ) -> go.Figure:
     """Create a spatial heatmap from NetCDF data."""
+    import plotly.express as px
+
     data = ds[var_name].isel(time=time_idx).values
     lat = ds["lat"].values
     lon = ds["lon"].values
@@ -161,13 +163,15 @@ def results_ui():
 
 
 def results_server(input, output, session, state):
-    results_obj: reactive.Value[OsmoseResults | None] = reactive.Value(None)
+    results_obj: reactive.Value = reactive.Value(None)
     results_data: reactive.Value[dict[str, pd.DataFrame]] = reactive.Value({})
-    spatial_ds: reactive.Value[xr.Dataset | None] = reactive.Value(None)
+    spatial_ds: reactive.Value = reactive.Value(None)
 
     @reactive.effect
     @reactive.event(input.btn_load_results)
     def _load_results():
+        from osmose.results import OsmoseResults
+
         out_dir = Path(input.output_dir())
         if not out_dir.is_dir():
             ui.notification_show(f"Directory not found: {out_dir}", type="error", duration=5)

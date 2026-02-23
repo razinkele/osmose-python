@@ -8,44 +8,32 @@ import threading
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 from shiny import reactive, render, ui
 from shinywidgets import output_widget, render_plotly
 
-from pymoo.core.callback import Callback
-
-from osmose.calibration.objectives import biomass_rmse, diet_distance
-from osmose.calibration.problem import FreeParameter, OsmoseCalibrationProblem
-from osmose.calibration.sensitivity import SensitivityAnalyzer
-from osmose.calibration.surrogate import SurrogateCalibrator
-from osmose.config.writer import OsmoseConfigWriter
 from osmose.schema.base import ParamType
 from osmose.schema.registry import ParameterRegistry
 from ui.styles import STYLE_EMPTY
 
 
-class ProgressCallback(Callback):
-    """pymoo callback that reports per-generation progress and supports cancellation.
+def _make_progress_callback(cal_history_append, cancel_check):
+    """Create a pymoo callback (lazy import to avoid loading pymoo at startup)."""
+    from pymoo.core.callback import Callback
 
-    Args:
-        cal_history_append: Callable to append a float (best objective value) each generation.
-        cancel_check: Callable returning True if optimization should be cancelled.
-    """
+    class _ProgressCallback(Callback):
+        def __init__(self):
+            super().__init__()
 
-    def __init__(self, cal_history_append, cancel_check):
-        super().__init__()
-        self._cal_history_append = cal_history_append
-        self._cancel_check = cancel_check
+        def notify(self, algorithm):
+            if cancel_check():
+                algorithm.termination.force_termination = True
+                return
+            F = algorithm.opt.get("F")
+            best = float(np.min(F.sum(axis=1)))
+            cal_history_append(best)
 
-    def notify(self, algorithm):
-        if self._cancel_check():
-            algorithm.termination.force_termination = True
-            return
-        F = algorithm.opt.get("F")
-        best = float(np.min(F.sum(axis=1)))
-        self._cal_history_append(best)
+    return _ProgressCallback()
 
 
 # -- Helper functions (module-level, testable without Shiny) -------------------
@@ -91,8 +79,10 @@ def collect_selected_params(input: object, state) -> list[dict]:
     return selected
 
 
-def build_free_params(selected: list[dict]) -> list[FreeParameter]:
+def build_free_params(selected: list[dict]) -> list:
     """Convert selected param dicts to FreeParameter objects."""
+    from osmose.calibration.problem import FreeParameter
+
     return [
         FreeParameter(key=p["key"], lower_bound=p["lower"], upper_bound=p["upper"])
         for p in selected
@@ -103,6 +93,8 @@ def make_convergence_chart(history: list[float]) -> go.Figure:
     """Line chart of best objective value per generation."""
     if not history:
         return go.Figure().update_layout(title="Convergence", template="osmose")
+    import plotly.express as px
+
     fig = px.line(x=list(range(len(history))), y=history, title="Convergence")
     fig.update_layout(
         xaxis_title="Generation",
@@ -114,6 +106,8 @@ def make_convergence_chart(history: list[float]) -> go.Figure:
 
 def make_pareto_chart(F: np.ndarray, obj_names: list[str]) -> go.Figure:
     """Scatter plot of Pareto front (2 objectives)."""
+    import plotly.express as px
+
     fig = px.scatter(x=F[:, 0], y=F[:, 1], title="Pareto Front")
     fig.update_layout(
         xaxis_title=obj_names[0] if len(obj_names) > 0 else "Obj 1",
@@ -265,6 +259,12 @@ def calibration_server(input, output, session, state):
         if not obs_bio and not obs_diet:
             return
 
+        import pandas as pd
+
+        from osmose.calibration.objectives import biomass_rmse, diet_distance
+        from osmose.calibration.problem import OsmoseCalibrationProblem
+        from osmose.config.writer import OsmoseConfigWriter
+
         free_params = build_free_params(selected)
         work_dir = Path(tempfile.mkdtemp(prefix="osmose_cal_"))
 
@@ -308,6 +308,8 @@ def calibration_server(input, output, session, state):
         if algorithm_choice == "surrogate":
 
             def run_surrogate():
+                from osmose.calibration.surrogate import SurrogateCalibrator
+
                 bounds = [(fp.lower_bound, fp.upper_bound) for fp in free_params]
                 n_obj = len(objective_fns)
                 calibrator = SurrogateCalibrator(param_bounds=bounds, n_objectives=n_obj)
@@ -370,7 +372,7 @@ def calibration_server(input, output, session, state):
                     current = cal_history.get()
                     cal_history.set(current + [val])
 
-                callback = ProgressCallback(
+                callback = _make_progress_callback(
                     cal_history_append=append_history,
                     cancel_check=cancel_flag.get,
                 )
@@ -400,6 +402,13 @@ def calibration_server(input, output, session, state):
     @reactive.effect
     @reactive.event(input.btn_sensitivity)
     def handle_sensitivity():
+        import pandas as pd
+
+        from osmose.calibration.objectives import biomass_rmse
+        from osmose.calibration.problem import OsmoseCalibrationProblem
+        from osmose.calibration.sensitivity import SensitivityAnalyzer
+        from osmose.config.writer import OsmoseConfigWriter
+
         selected = collect_selected_params(input, state)
         if not selected:
             return
@@ -420,9 +429,9 @@ def calibration_server(input, output, session, state):
         def run_sensitivity():
             samples = analyzer.generate_samples(n_base=64)
             sens_work_dir = Path(tempfile.mkdtemp(prefix="osmose_sens_"))
-            writer = OsmoseConfigWriter()
+            sens_writer = OsmoseConfigWriter()
             config_dir = sens_work_dir / "config"
-            writer.write(state.config.get(), config_dir)
+            sens_writer.write(state.config.get(), config_dir)
             base_config = config_dir / "osm_all-parameters.csv"
 
             Y = np.zeros(samples.shape[0])

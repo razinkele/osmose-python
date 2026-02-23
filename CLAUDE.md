@@ -21,10 +21,14 @@ osmose/          # Core library (usable without Shiny)
   runner.py      # Async Java subprocess manager
   results.py     # CSV/NetCDF output reader (xarray)
   scenarios.py   # Save/load/compare/fork (JSON)
-ui/              # Shiny UI (10 tabs in page_navbar)
+ui/              # Shiny UI (page_fillable + navset_pill_list sidebar)
   pages/         # One module per tab (*_ui() + *_server())
   components/    # Reusable widgets (param_form, etc.)
+  charts.py      # Custom "osmose" Plotly template (ocean palette)
+  styles.py      # Centralized style constants
   theme.py       # shinyswatch superhero theme
+www/
+  osmose.css     # Custom CSS overlay (Nautical Observatory theme)
 ```
 
 ## Code Conventions
@@ -42,6 +46,8 @@ ui/              # Shiny UI (10 tabs in page_navbar)
 - Config reader auto-detects separator per line (`;`, `=`, `,`, `:`, tab) — don't assume a single separator
 - Runner tests use `_ScriptRunner` subclass with mock Python scripts as fake JARs
 - SALib uses `SALib.sample.sobol` (not deprecated `saltelli`)
+- `import ui.charts` in page modules shadows `from shiny import ui` — register templates in `app.py` only
+- `navset_pill_list` doesn't accept bare strings as section headers — use `ui.nav_control()` wrapper
 
 ## Design Docs
 - Design: `docs/plans/2026-02-21-osmose-python-port-design.md`
