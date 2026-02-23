@@ -93,3 +93,20 @@ def test_make_spatial_map_with_title():
     )
     fig = make_spatial_map(ds, "biomass", time_idx=0, title="Biomass t=0")
     assert fig.layout.title.text == "Biomass t=0"
+
+
+def test_make_spatial_map_multiple_timesteps():
+    """Spatial map renders correctly at different time indices."""
+    data = np.random.rand(5, 4, 6)
+    ds = xr.Dataset(
+        {"biomass": (["time", "lat", "lon"], data)},
+        coords={
+            "time": range(5),
+            "lat": np.linspace(40, 50, 4),
+            "lon": np.linspace(-5, 5, 6),
+        },
+    )
+    for t in range(5):
+        fig = make_spatial_map(ds, "biomass", time_idx=t, title=f"t={t}")
+        assert fig is not None
+        assert f"t={t}" in fig.layout.title.text

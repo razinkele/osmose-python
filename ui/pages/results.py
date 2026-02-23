@@ -141,6 +141,12 @@ def results_ui():
                     max=1,
                     value=0,
                     step=1,
+                    animate=ui.AnimationOptions(
+                        interval=1000,
+                        loop=True,
+                        play_button="Play",
+                        pause_button="Pause",
+                    ),
                 ),
                 output_widget("spatial_chart"),
             ),
