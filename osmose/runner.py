@@ -8,6 +8,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
+from osmose.logging import setup_logging
+
+_log = setup_logging("osmose.runner")
+
 
 @dataclass
 class RunResult:
@@ -70,6 +74,7 @@ class OsmoseRunner:
             RunResult with returncode, stdout, stderr.
         """
         cmd = self._build_cmd(config_path, output_dir, java_opts, overrides)
+        _log.info("Starting OSMOSE: %s", " ".join(cmd))
 
         self._process = await asyncio.create_subprocess_exec(
             *cmd,
@@ -98,6 +103,7 @@ class OsmoseRunner:
         )
 
         await self._process.wait()
+        _log.info("OSMOSE finished with exit code %d", self._process.returncode)
         result_output_dir = output_dir or config_path.parent / "output"
 
         return RunResult(
@@ -111,6 +117,7 @@ class OsmoseRunner:
         """Terminate the running OSMOSE process."""
         if self._process and self._process.returncode is None:
             self._process.terminate()
+            _log.info("OSMOSE run cancelled")
 
     @staticmethod
     def get_java_version(java_cmd: str = "java") -> str | None:

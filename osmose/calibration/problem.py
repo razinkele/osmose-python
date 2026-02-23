@@ -11,6 +11,10 @@ from typing import Callable
 import numpy as np
 from pymoo.core.problem import Problem
 
+from osmose.logging import setup_logging
+
+_log = setup_logging("osmose.calibration")
+
 
 @dataclass
 class FreeParameter:
@@ -66,6 +70,7 @@ class OsmoseCalibrationProblem(Problem):
         X has shape (pop_size, n_var). Each row is a candidate.
         If n_parallel > 1, candidates are evaluated concurrently using threads.
         """
+        _log.info("Evaluating %d candidates (parallel=%d)", X.shape[0], self.n_parallel)
         F = np.full((X.shape[0], self.n_obj), np.inf)
 
         if self.n_parallel > 1:

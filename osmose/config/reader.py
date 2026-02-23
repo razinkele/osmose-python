@@ -5,6 +5,10 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from osmose.logging import setup_logging
+
+_log = setup_logging("osmose.config")
+
 
 class OsmoseConfigReader:
     """Read OSMOSE configuration files with recursive sub-file loading.
@@ -19,6 +23,7 @@ class OsmoseConfigReader:
 
     def read(self, master_file: Path) -> dict[str, str]:
         """Recursively read a master config and all referenced sub-configs."""
+        _log.info("Reading config from %s", master_file)
         flat: dict[str, str] = {}
         self._read_recursive(master_file, flat)
         return flat
