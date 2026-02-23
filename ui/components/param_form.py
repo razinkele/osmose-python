@@ -6,6 +6,23 @@ from shiny import ui
 from osmose.schema.base import OsmoseField, ParamType
 
 
+def constraint_hint(field: OsmoseField) -> str:
+    """Generate a constraint hint string for a field.
+
+    Returns text like 'Range: 1.0 — 200.0 cm' or empty string if no constraints.
+    """
+    parts: list[str] = []
+    if field.min_val is not None and field.max_val is not None:
+        parts.append(f"Range: {field.min_val} — {field.max_val}")
+    elif field.min_val is not None:
+        parts.append(f"Min: {field.min_val}")
+    elif field.max_val is not None:
+        parts.append(f"Max: {field.max_val}")
+    if field.unit and parts:
+        parts[0] = f"{parts[0]} {field.unit}"
+    return " | ".join(parts)
+
+
 def render_field(field: OsmoseField, species_idx: int | None = None, prefix: str = "") -> ui.Tag:
     """Generate a Shiny input widget from an OsmoseField.
 
@@ -29,7 +46,7 @@ def render_field(field: OsmoseField, species_idx: int | None = None, prefix: str
 
     match field.param_type:
         case ParamType.FLOAT:
-            return ui.input_numeric(
+            widget = ui.input_numeric(
                 input_id,
                 label,
                 value=field.default if field.default is not None else 0.0,
@@ -37,8 +54,15 @@ def render_field(field: OsmoseField, species_idx: int | None = None, prefix: str
                 max=field.max_val,
                 step=_guess_step(field),
             )
+            hint = constraint_hint(field)
+            if hint:
+                return ui.div(
+                    widget,
+                    ui.tags.small(hint, style="color: #888; font-size: 11px; margin-top: -8px;"),
+                )
+            return widget
         case ParamType.INT:
-            return ui.input_numeric(
+            widget = ui.input_numeric(
                 input_id,
                 label,
                 value=field.default if field.default is not None else 0,
@@ -46,6 +70,13 @@ def render_field(field: OsmoseField, species_idx: int | None = None, prefix: str
                 max=int(field.max_val) if field.max_val is not None else None,
                 step=1,
             )
+            hint = constraint_hint(field)
+            if hint:
+                return ui.div(
+                    widget,
+                    ui.tags.small(hint, style="color: #888; font-size: 11px; margin-top: -8px;"),
+                )
+            return widget
         case ParamType.BOOL:
             return ui.input_switch(
                 input_id,
