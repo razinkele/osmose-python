@@ -104,3 +104,30 @@ def test_scenario_timestamps(manager, sample_scenario):
 def test_load_nonexistent_raises(manager):
     with pytest.raises(FileNotFoundError):
         manager.load("nonexistent")
+
+
+def test_export_all_creates_zip(tmp_path):
+    mgr = ScenarioManager(tmp_path / "scenarios")
+    mgr.save(Scenario(name="alpha", config={"x": "1"}))
+    mgr.save(Scenario(name="beta", config={"y": "2"}))
+    zip_path = tmp_path / "export.zip"
+    mgr.export_all(zip_path)
+    assert zip_path.exists()
+    import zipfile
+
+    with zipfile.ZipFile(zip_path) as zf:
+        names = zf.namelist()
+        assert "alpha.json" in names
+        assert "beta.json" in names
+
+
+def test_import_all_from_zip(tmp_path):
+    src_mgr = ScenarioManager(tmp_path / "src")
+    src_mgr.save(Scenario(name="gamma", config={"z": "3"}))
+    zip_path = tmp_path / "bundle.zip"
+    src_mgr.export_all(zip_path)
+    dst_mgr = ScenarioManager(tmp_path / "dst")
+    count = dst_mgr.import_all(zip_path)
+    assert count == 1
+    loaded = dst_mgr.load("gamma")
+    assert loaded.config == {"z": "3"}

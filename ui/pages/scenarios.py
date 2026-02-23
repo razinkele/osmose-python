@@ -1,5 +1,7 @@
 """Scenario management page."""
 
+from pathlib import Path
+
 from shiny import reactive, render, ui
 
 from osmose.scenarios import Scenario, ScenarioManager
@@ -42,6 +44,22 @@ def scenarios_ui():
                 ui.output_ui("compare_results"),
             ),
             col_widths=[3, 5, 4],
+        ),
+        ui.layout_columns(
+            ui.card(
+                ui.card_header("Bulk Operations"),
+                ui.download_button(
+                    "export_all_scenarios",
+                    "Export All (ZIP)",
+                    class_="btn-primary w-100",
+                ),
+                ui.input_file(
+                    "import_scenarios_zip",
+                    "Import Scenarios (ZIP)",
+                    accept=[".zip"],
+                ),
+            ),
+            col_widths=[12],
         ),
     )
 
@@ -179,3 +197,25 @@ def scenarios_server(input, output, session, state):
             ui.tags.tbody(*rows),
             class_="table table-sm table-bordered",
         )
+
+    # --- Bulk Export ---
+
+    @render.download(filename="osmose_scenarios.zip")
+    def export_all_scenarios():
+        import tempfile
+
+        zip_path = Path(tempfile.mktemp(suffix=".zip"))
+        mgr.export_all(zip_path)
+        return str(zip_path)
+
+    # --- Bulk Import ---
+
+    @reactive.effect
+    @reactive.event(input.import_scenarios_zip)
+    def handle_import_scenarios():
+        file_info = input.import_scenarios_zip()
+        if not file_info:
+            return
+        zip_path = Path(file_info[0]["datapath"])
+        mgr.import_all(zip_path)
+        _bump()

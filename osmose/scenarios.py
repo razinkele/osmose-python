@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import zipfile
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from pathlib import Path
@@ -111,3 +112,36 @@ class ScenarioManager:
         )
         self.save(forked)
         return forked
+
+    def export_all(self, zip_path: Path) -> None:
+        """Export all scenarios to a ZIP file."""
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+            for info in self.list_scenarios():
+                scenario = self.load(info["name"])
+                data = {
+                    "name": scenario.name,
+                    "description": scenario.description,
+                    "config": scenario.config,
+                    "tags": scenario.tags,
+                    "parent_scenario": scenario.parent_scenario,
+                }
+                zf.writestr(f"{scenario.name}.json", json.dumps(data, indent=2))
+
+    def import_all(self, zip_path: Path) -> int:
+        """Import scenarios from a ZIP file. Returns count of imported scenarios."""
+        count = 0
+        with zipfile.ZipFile(zip_path, "r") as zf:
+            for name in zf.namelist():
+                if not name.endswith(".json"):
+                    continue
+                data = json.loads(zf.read(name))
+                scenario = Scenario(
+                    name=data["name"],
+                    description=data.get("description", ""),
+                    config=data.get("config", {}),
+                    tags=data.get("tags", []),
+                    parent_scenario=data.get("parent_scenario"),
+                )
+                self.save(scenario)
+                count += 1
+        return count
