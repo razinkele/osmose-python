@@ -14,6 +14,8 @@ import plotly.graph_objects as go
 from shiny import reactive, render, ui
 from shinywidgets import output_widget, render_plotly
 
+from pymoo.core.callback import Callback
+
 from osmose.calibration.objectives import biomass_rmse, diet_distance
 from osmose.calibration.problem import FreeParameter, OsmoseCalibrationProblem
 from osmose.calibration.sensitivity import SensitivityAnalyzer
@@ -21,6 +23,28 @@ from osmose.calibration.surrogate import SurrogateCalibrator
 from osmose.config.writer import OsmoseConfigWriter
 from osmose.schema.base import ParamType
 from osmose.schema.registry import ParameterRegistry
+
+
+class ProgressCallback(Callback):
+    """pymoo callback that reports per-generation progress and supports cancellation.
+
+    Args:
+        cal_history_append: Callable to append a float (best objective value) each generation.
+        cancel_check: Callable returning True if optimization should be cancelled.
+    """
+
+    def __init__(self, cal_history_append, cancel_check):
+        super().__init__()
+        self._cal_history_append = cal_history_append
+        self._cancel_check = cancel_check
+
+    def notify(self, algorithm):
+        if self._cancel_check():
+            algorithm.termination.force_termination = True
+            return
+        F = algorithm.opt.get("F")
+        best = float(np.min(F.sum(axis=1)))
+        self._cal_history_append(best)
 
 
 # -- Helper functions (module-level, testable without Shiny) -------------------
@@ -340,24 +364,27 @@ def calibration_server(input, output, session, state):
                 algorithm = NSGA2(pop_size=pop_size)
                 termination = get_termination("n_gen", generations)
 
+                def append_history(val):
+                    current = cal_history.get()
+                    cal_history.set(current + [val])
+
+                callback = ProgressCallback(
+                    cal_history_append=append_history,
+                    cancel_check=cancel_flag.get,
+                )
+
                 res = minimize(
                     problem,
                     algorithm,
                     termination,
                     seed=42,
                     verbose=False,
+                    callback=callback,
                 )
 
                 if res.F is not None:
                     cal_F.set(res.F)
                     cal_X.set(res.X)
-                    if hasattr(res, "history") and res.history:
-                        history = [
-                            float(np.min(gen.opt.get("F").sum(axis=1)))
-                            for gen in res.history
-                            if gen.opt is not None
-                        ]
-                        cal_history.set(history)
 
             thread = threading.Thread(target=run_optimization, daemon=True)
             thread.start()
