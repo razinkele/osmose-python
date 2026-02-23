@@ -1,41 +1,17 @@
 """Advanced raw config editor page."""
 
-from shiny import ui, render
-from osmose.schema.registry import ParameterRegistry
-from osmose.schema.simulation import SIMULATION_FIELDS
-from osmose.schema.species import SPECIES_FIELDS
-from osmose.schema.grid import GRID_FIELDS
-from osmose.schema.predation import PREDATION_FIELDS
-from osmose.schema.fishing import FISHING_FIELDS
-from osmose.schema.movement import MOVEMENT_FIELDS
-from osmose.schema.ltl import LTL_FIELDS
-from osmose.schema.output import OUTPUT_FIELDS
-from osmose.schema.bioenergetics import BIOENERGETICS_FIELDS
-from osmose.schema.economics import ECONOMICS_FIELDS
+import tempfile
+from pathlib import Path
 
+from shiny import reactive, render, ui
 
-def _build_registry():
-    reg = ParameterRegistry()
-    for fields in [
-        SIMULATION_FIELDS,
-        SPECIES_FIELDS,
-        GRID_FIELDS,
-        PREDATION_FIELDS,
-        FISHING_FIELDS,
-        MOVEMENT_FIELDS,
-        LTL_FIELDS,
-        OUTPUT_FIELDS,
-        BIOENERGETICS_FIELDS,
-        ECONOMICS_FIELDS,
-    ]:
-        for f in fields:
-            reg.register(f)
-    return reg
+from osmose.config.reader import OsmoseConfigReader
+from osmose.config.writer import OsmoseConfigWriter
+from ui.state import REGISTRY
 
 
 def advanced_ui():
-    registry = _build_registry()
-    categories = ["all"] + registry.categories()
+    categories = ["all"] + REGISTRY.categories()
 
     return ui.page_fluid(
         ui.layout_columns(
@@ -52,11 +28,13 @@ def advanced_ui():
             ui.card(
                 ui.card_header("Filters"),
                 ui.input_select(
-                    "adv_category", "Category", choices={c: c.title() for c in categories}
+                    "adv_category",
+                    "Category",
+                    choices={c: c.title() for c in categories},
                 ),
                 ui.input_text("adv_search", "Search parameters", placeholder="Type to filter..."),
                 ui.p(
-                    f"Total parameters in registry: {len(registry.all_fields())}",
+                    f"Total parameters in registry: {len(REGISTRY.all_fields())}",
                     style="color: #999; font-size: 12px;",
                 ),
             ),
@@ -70,7 +48,27 @@ def advanced_ui():
 
 
 def advanced_server(input, output, session, state):
-    registry = _build_registry()
+    @reactive.effect
+    @reactive.event(input.import_config)
+    def handle_import():
+        file_info = input.import_config()
+        if not file_info:
+            return
+        filepath = Path(file_info[0]["datapath"])
+        reader = OsmoseConfigReader()
+        loaded = reader.read_file(filepath)
+        # Merge into current config
+        cfg = dict(state.config.get())
+        cfg.update(loaded)
+        state.config.set(cfg)
+
+    @render.download(filename="osm_all-parameters.csv")
+    def export_config():
+        work_dir = Path(tempfile.mkdtemp(prefix="osmose_export_"))
+        writer = OsmoseConfigWriter()
+        writer.write(state.config.get(), work_dir)
+        master = work_dir / "osm_all-parameters.csv"
+        return str(master)
 
     @render.ui
     def param_table():
@@ -78,9 +76,9 @@ def advanced_server(input, output, session, state):
         search = input.adv_search().lower() if input.adv_search() else ""
 
         if category == "all":
-            fields = registry.all_fields()
+            fields = REGISTRY.all_fields()
         else:
-            fields = registry.fields_by_category(category)
+            fields = REGISTRY.fields_by_category(category)
 
         if search:
             fields = [
@@ -92,13 +90,17 @@ def advanced_server(input, output, session, state):
         if not fields:
             return ui.div("No parameters match your filter.", style="padding: 20px; color: #999;")
 
+        # Show current config values
+        cfg = state.config.get()
+
         rows = []
-        for f in fields[:100]:  # Limit to 100 for performance
+        for f in fields[:100]:
+            current_val = cfg.get(f.key_pattern, "-")
             rows.append(
                 ui.tags.tr(
                     ui.tags.td(f.key_pattern, style="font-family: monospace; font-size: 12px;"),
                     ui.tags.td(f.param_type.value),
-                    ui.tags.td(str(f.default) if f.default is not None else "-"),
+                    ui.tags.td(str(current_val)),
                     ui.tags.td(f.category),
                     ui.tags.td(
                         f.description[:60] + "..." if len(f.description) > 60 else f.description
@@ -112,7 +114,7 @@ def advanced_server(input, output, session, state):
                     ui.tags.tr(
                         ui.tags.th("Key"),
                         ui.tags.th("Type"),
-                        ui.tags.th("Default"),
+                        ui.tags.th("Current Value"),
                         ui.tags.th("Category"),
                         ui.tags.th("Description"),
                     )
